@@ -75,12 +75,9 @@ RandomX_ConfigurationARQ::RandomX_ConfigurationARQ()
 	ArgonSalt = "RandomARQ\x01";
 	ProgramIterations = 1024;
 	ProgramSize = 256;
-	ProgramCount = 16;
-	ArgonIterations = 3;
+	ProgramCount = 4;
+	ArgonIterations = 1;
 	ArgonLanes = 1;
-	CacheAccesses = 16;
-	DatasetBaseSize = 1073741824;
-	DatasetExtraSize = 16777152;
 	ScratchpadL2_Size = 131072;
 	ScratchpadL3_Size = 262144;
 
