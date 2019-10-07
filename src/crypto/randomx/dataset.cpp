@@ -38,6 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 #include <limits>
 #include <cstring>
+#include <cassert>
 
 #include "crypto/randomx/common.hpp"
 #include "crypto/randomx/dataset.hpp"

@@ -154,7 +154,7 @@ int randomx_argon2_initialize(argon2_instance_t *instance, argon2_context *conte
  * @param instance Pointer to the current instance
  * @return ARGON2_OK if successful, @context->state
  */
-randomx_argon2_fill_memory_blocks(argon2_instance_t* instance);
+int randomx_argon2_fill_memory_blocks(argon2_instance_t* instance);
 
 #if defined(__cplusplus)
 }
