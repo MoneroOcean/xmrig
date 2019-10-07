@@ -75,9 +75,12 @@ RandomX_ConfigurationARQ::RandomX_ConfigurationARQ()
 	ArgonSalt = "RandomARQ\x01";
 	ProgramIterations = 1024;
 	ProgramSize = 256;
-	ProgramCount = 8;
+	ProgramCount = 16;
 	ArgonIterations = 3;
 	ArgonLanes = 1;
+	CacheAccesses = 16;
+	DatasetBaseSize = 1073741824;
+	DatasetExtraSize = 16777152;
 	ScratchpadL2_Size = 131072;
 	ScratchpadL3_Size = 262144;
 
@@ -289,6 +292,7 @@ extern "C" {
 
 		try {
 			cache = new randomx_cache();
+			cache->argonImpl = randomx::selectArgonImpl(flags);
 			switch (flags & (RANDOMX_FLAG_JIT | RANDOMX_FLAG_LARGE_PAGES)) {
 				case RANDOMX_FLAG_DEFAULT:
 					cache->dealloc = &randomx::deallocCache<randomx::DefaultAllocator>;
@@ -344,7 +348,9 @@ extern "C" {
 
 	void randomx_release_cache(randomx_cache* cache) {
 		assert(cache != nullptr);
-		cache->dealloc(cache);
+		if (cache->memory != nullptr) {
+			cache->dealloc(cache);
+		}
 		delete cache;
 	}
 

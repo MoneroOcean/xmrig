@@ -15,6 +15,8 @@ if (WITH_RANDOMX)
         src/crypto/randomx/allocator.cpp
         src/crypto/randomx/argon2_core.c
         src/crypto/randomx/argon2_ref.c
+        src/crypto/randomx/argon2_ssse3.c
+        src/crypto/randomx/argon2_avx2.c
         src/crypto/randomx/blake2_generator.cpp
         src/crypto/randomx/blake2/blake2b.c
         src/crypto/randomx/bytecode_machine.cpp
