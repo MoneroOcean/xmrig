@@ -76,9 +76,9 @@ struct RandomX_ConfigurationBase
 		ConditionMask_Calculated = ((1 << JumpBits) - 1) << JumpOffset,
 	};
 
-        uint32_t ArgonMemory;
-        uint32_t CacheAccesses;
-        uint32_t DatasetBaseSize;
+	uint32_t ArgonMemory;
+	uint32_t CacheAccesses;
+	uint32_t DatasetBaseSize;
 
 	uint32_t ArgonIterations;
 	uint32_t ArgonLanes;
@@ -135,11 +135,10 @@ struct RandomX_ConfigurationBase
 	uint8_t codePrefetchScratchpadTweaked[28];
 	uint32_t codePrefetchScratchpadTweakedSize;
 
-        uint32_t CacheLineAlignMask_Calculated;
-
 	uint32_t AddressMask_Calculated[4];
 	uint32_t ScratchpadL3Mask_Calculated;
 	uint32_t ScratchpadL3Mask64_Calculated;
+	uint32_t CacheLineAlignMask_Calculated;
 
 #	if (XMRIG_ARM == 8)
 	uint32_t Log2_ScratchpadL1;
