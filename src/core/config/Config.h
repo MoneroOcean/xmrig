@@ -104,7 +104,7 @@ public:
     void getJSON(rapidjson::Document &doc) const override;
 
 #   ifdef XMRIG_FEATURE_MO_BENCHMARK
-    inline MoBenchmark &benchmark()           { return m_benchmark; }
+    inline MoBenchmark &benchmark() { return m_benchmark; }
 #   endif
 
 private:

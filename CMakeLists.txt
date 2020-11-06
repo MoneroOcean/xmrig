@@ -26,7 +26,6 @@ option(WITH_NVML            "Enable NVML (NVIDIA Management Library) support (on
 option(WITH_ADL             "Enable ADL (AMD Display Library) or sysfs support (only if OpenCL backend enabled)" ON)
 option(WITH_STRICT_CACHE    "Enable strict checks for OpenCL cache" ON)
 option(WITH_INTERLEAVE_DEBUG_LOG "Enable debug log for threads interleave" OFF)
-option(WITH_MO_BENCHMARK    "Enable Benchmark module and algo-perf feature (for MoneroOcean)" ON)
 option(WITH_PROFILING       "Enable profiling for developers" OFF)
 option(WITH_SSE4_1          "Enable SSE 4.1 for Blake2" ON)
 option(WITH_AVX2            "Enable AVX2 for Blake2" ON)
@@ -34,6 +33,7 @@ option(WITH_VAES            "Enable VAES instructions for Cryptonight" ON)
 option(WITH_BENCHMARK       "Enable builtin RandomX benchmark and stress test" ON)
 option(WITH_SECURE_JIT      "Enable secure access to JIT memory" OFF)
 option(WITH_DMI             "Enable DMI/SMBIOS reader" ON)
+option(WITH_MO_BENCHMARK    "Enable Benchmark module and algo-perf feature (for MoneroOcean)" ON)
 
 option(BUILD_STATIC         "Build static binary" OFF)
 option(ARM_V8               "Force ARMv8 (64 bit) architecture, use with caution if automatic detection fails, but you sure it may work" OFF)
@@ -134,13 +134,6 @@ set(SOURCES_CRYPTO
     src/crypto/flex/flex.cpp
     src/crypto/flex/flex_keccak.c
    )
-
-if (WITH_MO_BENCHMARK)
-    list(APPEND SOURCES
-        src/core/MoBenchmark.cpp
-        )
-    add_definitions(/DXMRIG_FEATURE_MO_BENCHMARK)
-endif()
 
 if (CMAKE_C_COMPILER_ID MATCHES GNU)
     set_source_files_properties(src/crypto/cn/CnHash.cpp PROPERTIES COMPILE_FLAGS "-Ofast -fno-tree-vectorize")
@@ -246,6 +239,13 @@ include_directories(${UV_INCLUDE_DIR})
 
 if (WITH_DEBUG_LOG)
     add_definitions(/DAPP_DEBUG)
+endif()
+
+if (WITH_MO_BENCHMARK)
+    list(APPEND SOURCES
+        src/core/MoBenchmark.cpp
+        )
+    add_definitions(/DXMRIG_FEATURE_MO_BENCHMARK)
 endif()
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${TLS_SOURCES} ${XMRIG_ASM_SOURCES})

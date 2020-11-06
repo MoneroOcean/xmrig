@@ -285,7 +285,7 @@ void RandomX_ConfigurationBase::Apply()
 
 	ScratchpadL3Mask_Calculated = (((ScratchpadL3_Size / sizeof(uint64_t)) - 1) * 8);
 	ScratchpadL3Mask64_Calculated = ((ScratchpadL3_Size / sizeof(uint64_t)) / 8 - 1) * 64;
-        CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
+	CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
 
 #if defined(XMRIG_FEATURE_ASM) && (defined(_M_X64) || defined(__x86_64__))
 	*(uint32_t*)(codeSshPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
