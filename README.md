@@ -26,6 +26,12 @@ The preferred way to configure the miner is the [JSON config file](https://xmrig
 
 ## Donations
 * Default and minimum donation: 0%. Can be increased via option `donate-level` or disabled in source code.
+* XMR: `49Q2kud1fLKHSEvVLje8ePPpitheePEeNNzDrdmxpbdpSXHgpBGykFGHa37pZX4i5M9GyaJmoHUeBR5gZFFnXPgiPdD54tY`
+* Bitcoin: `bc1qrcrff2qs2z72cf37zarfke6fquu3sjmgwjpum7`
+* Ethereum: `0x0EFaA3ba8DFF3b4Ed9Eed83E0E5F90035540aF74`
+* Litecoin: `LY2YqrCQRHbMmR6AqKxNQstWo6uDMJwoTQ`
+* Dogecoin: `D6HWrYHhMtPxx9U62HmbMWDPt2qeJ7pWNo`
+
 
 ## Developers
 * **[xmrig](https://github.com/xmrig)**
