@@ -25,7 +25,7 @@ The preferred way to configure the miner is the [JSON config file](https://xmrig
 * **[Workers](http://workers.xmrig.info)** helps manage your miners via HTTP API.
 
 ## Donations
-* Default and minimum donation 0%`
+* Default and minimum donation 0% can be increased via option 'donate-level' or disabled in source code.
 
 ## Developers
 * **[xmrig](https://github.com/xmrig)**
