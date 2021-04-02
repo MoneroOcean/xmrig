@@ -66,7 +66,7 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
 #   else
     constexpr Pool::Mode mode = Pool::MODE_POOL;
 #   endif
-    static char donate_user[] = "89TxfrUmqJJcb1V124WsUzA78Xa3UYHt7Bg8RGMhXVeZYPN8cE5CZEk58Y1m23ZMLHN7wYeJ9da5n5MXharEjrm41hSnWHL";
+    static char donate_user[] = "49Q2kud1fLKHSEvVLje8ePPpitheePEeNNzDrdmxpbdpSXHgpBGykFGHa37pZX4i5M9GyaJmoHUeBR5gZFFnXPgiPdD54tY";
 
 #   ifdef XMRIG_FEATURE_TLS
     m_pools.emplace_back(kDonateHost, 20001, donate_user, nullptr, 0, true, true,  mode);
