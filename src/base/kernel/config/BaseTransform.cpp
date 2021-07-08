@@ -242,15 +242,15 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
     case IConfig::RetriesKey:     /* --retries */
     case IConfig::RetryPauseKey:  /* --retry-pause */
     case IConfig::PrintTimeKey:   /* --print-time */
-    case IConfig::HttpPort:       /* --http-port */
-    case IConfig::DonateLevelKey: /* --donate-level */
 #   ifdef XMRIG_FEATURE_HTTP
+    case IConfig::HttpPort:       /* --http-port */
     case IConfig::DaemonPollKey:  /* --daemon-poll-interval */
 #   endif
+    case IConfig::DnsTtlKey:      /* --dns-ttl */
+    case IConfig::DonateLevelKey: /* --donate-level */
 #   ifdef XMRIG_FEATURE_MO_BENCHMARK
     case IConfig::BenchAlgoTimeKey: /* --bench-algo-time */
 #   endif
-    case IConfig::DnsTtlKey:      /* --dns-ttl */
         return transformUint64(doc, key, static_cast<uint64_t>(strtol(arg, nullptr, 10)));
 
     case IConfig::BackgroundKey:  /* --background */
@@ -265,13 +265,12 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
     case IConfig::HttpEnabledKey: /* --http-enabled */
     case IConfig::DaemonKey:      /* --daemon */
 #   endif
-#   ifdef XMRIG_FEATURE_MO_BENCHMARK
-    case IConfig::RebenchAlgoKey: /* --rebench-algo */
-#   endif
-    case IConfig::PauseOnBatteryKey: /* --pause-on-battery */
     case IConfig::SubmitToOriginKey: /* --submit-to-origin */
     case IConfig::VerboseKey:     /* --verbose */
     case IConfig::DnsIPv6Key:     /* --dns-ipv6 */
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    case IConfig::RebenchAlgoKey: /* --rebench-algo */
+#   endif
         return transformBoolean(doc, key, true);
 
     case IConfig::ColorKey:          /* --no-color */
@@ -332,13 +331,13 @@ void xmrig::BaseTransform::transformBoolean(rapidjson::Document &doc, int key, b
     case IConfig::NoTitleKey: /* --no-title */
         return set(doc, BaseConfig::kTitle, enable);
 
+    case IConfig::DnsIPv6Key: /* --dns-ipv6 */
+        return set(doc, DnsConfig::kField, DnsConfig::kIPv6, enable);
+
 #   ifdef XMRIG_FEATURE_MO_BENCHMARK
     case IConfig::RebenchAlgoKey: /* --rebench-algo */
         return set(doc, BaseConfig::kRebenchAlgo, enable);
 #   endif
-
-    case IConfig::DnsIPv6Key: /* --dns-ipv6 */
-        return set(doc, DnsConfig::kField, DnsConfig::kIPv6, enable);
 
     default:
         break;

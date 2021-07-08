@@ -99,6 +99,11 @@ static AlgoName const algorithm_names[] = {
     { "cryptonight-talleo",        "cn-talleo",        Algorithm::CN_PICO_TLO     },
     { "cryptonight_talleo",        "cn_talleo",        Algorithm::CN_PICO_TLO     },
 #   endif
+#   ifdef XMRIG_ALGO_CN_FEMTO
+    { "cryptonight/upx2",          "cn/upx2",          Algorithm::CN_UPX2         },
+    { "cn-extremelite/upx2",       nullptr,            Algorithm::CN_UPX2         },
+    { "cryptonight-upx/2",         nullptr,            Algorithm::CN_UPX2         },
+#   endif
 #   ifdef XMRIG_ALGO_RANDOMX
     { "randomx/0",                 "rx/0",             Algorithm::RX_0            },
     { "randomx/test",              "rx/test",          Algorithm::RX_0            },
@@ -135,11 +140,6 @@ static AlgoName const algorithm_names[] = {
 #   ifdef XMRIG_ALGO_CN_GPU
     { "cryptonight/gpu",           "cn/gpu",           Algorithm::CN_GPU          },
     { "cryptonight_gpu",           nullptr,            Algorithm::CN_GPU          },
-#   endif
-#   ifdef XMRIG_ALGO_CN_FEMTO
-    { "cryptonight/upx2",          "cn/upx2",          Algorithm::CN_UPX2         },
-    { "cn-extremelite/upx2",       nullptr,            Algorithm::CN_UPX2         },
-    { "cryptonight-upx/2",         nullptr,            Algorithm::CN_UPX2         },
 #   endif
 };
 

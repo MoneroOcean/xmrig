@@ -203,7 +203,7 @@ bool xmrig::Config::isShouldSave() const
     }
 #   endif
 
-#   ifdef XMRIG_FEATURE_BENCHMARK
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
     if (m_benchmark.isNewBenchRun()) {
         return true;
     }
@@ -246,12 +246,12 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
     d_ptr->healthPrintTime = reader.getUint(kHealthPrintTime, d_ptr->healthPrintTime);
 #   endif
 
-#   ifdef XMRIG_FEATURE_BENCHMARK
-    m_benchmark.read(reader.getValue(kAlgoPerf));
-#   endif
-
 #   ifdef XMRIG_FEATURE_DMI
     d_ptr->dmi = reader.getBool(kDMI, d_ptr->dmi);
+#   endif
+
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    m_benchmark.read(reader.getValue(kAlgoPerf));
 #   endif
 
     return true;
@@ -314,13 +314,12 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember(StringRef(kUserAgent),                m_userAgent.toJSON(), allocator);
     doc.AddMember(StringRef(kVerbose),                  Log::verbose(), allocator);
     doc.AddMember(StringRef(kWatch),                    m_watch, allocator);
+    doc.AddMember(StringRef(kPauseOnBattery),           isPauseOnBattery(), allocator);
+    doc.AddMember(StringRef(kPauseOnActive),            (d_ptr->idleTime == 0U || d_ptr->idleTime == kIdleTime) ? Value(isPauseOnActive()) : Value(d_ptr->idleTime), allocator);
 
-#   ifdef XMRIG_FEATURE_BENCHMARK
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
     doc.AddMember(StringRef(kRebenchAlgo),              isRebenchAlgo(), allocator);
     doc.AddMember(StringRef(kBenchAlgoTime),            benchAlgoTime(), allocator);
     doc.AddMember(StringRef(kAlgoPerf),                 m_benchmark.toJSON(doc), allocator);
 #   endif
-
-    doc.AddMember(StringRef(kPauseOnBattery),           isPauseOnBattery(), allocator);
-    doc.AddMember(StringRef(kPauseOnActive),            (d_ptr->idleTime == 0U || d_ptr->idleTime == kIdleTime) ? Value(isPauseOnActive()) : Value(d_ptr->idleTime), allocator);
 }

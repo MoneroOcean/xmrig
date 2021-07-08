@@ -130,6 +130,7 @@ double MoBenchmark::get_algo_perf(Algorithm::Id algo) const {
         case Algorithm::CN_HEAVY_XHV:  return m_bench_algo_perf[BenchAlgo::CN_HEAVY_XHV];
         case Algorithm::CN_PICO_0:     return m_bench_algo_perf[BenchAlgo::CN_PICO_0];
         case Algorithm::CN_PICO_TLO:   return m_bench_algo_perf[BenchAlgo::CN_PICO_0];
+        case Algorithm::CN_UPX2:       return m_bench_algo_perf[BenchAlgo::CN_UPX2];
         case Algorithm::CN_GPU:        return m_bench_algo_perf[BenchAlgo::CN_GPU];
         case Algorithm::AR2_CHUKWA_V2: return m_bench_algo_perf[BenchAlgo::AR2_CHUKWA_V2];
         case Algorithm::ASTROBWT_DERO: return m_bench_algo_perf[BenchAlgo::ASTROBWT_DERO];
@@ -230,8 +231,3 @@ uint64_t MoBenchmark::get_now() const { // get current time in ms
 }
 
 } // namespace xmrig
-
-const char *xmrig::bm_tag()
-{
-    return Tags::benchmark();
-}

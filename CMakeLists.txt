@@ -5,8 +5,8 @@ option(WITH_HWLOC           "Enable hwloc support" ON)
 option(WITH_CN_LITE         "Enable CryptoNight-Lite algorithms family" ON)
 option(WITH_CN_HEAVY        "Enable CryptoNight-Heavy algorithms family" ON)
 option(WITH_CN_PICO         "Enable CryptoNight-Pico algorithm" ON)
-option(WITH_CN_GPU          "Enable CryptoNight-GPU algorithm" ON)
 option(WITH_CN_FEMTO        "Enable CryptoNight-UPX2 algorithm" ON)
+option(WITH_CN_GPU          "Enable CryptoNight-GPU algorithm" ON)
 option(WITH_RANDOMX         "Enable RandomX algorithms family" ON)
 option(WITH_ARGON2          "Enable Argon2 algorithms family" ON)
 option(WITH_ASTROBWT        "Enable AstroBWT algorithms family" ON)
@@ -24,12 +24,12 @@ option(WITH_NVML            "Enable NVML (NVIDIA Management Library) support (on
 option(WITH_ADL             "Enable ADL (AMD Display Library) or sysfs support (only if OpenCL backend enabled)" ON)
 option(WITH_STRICT_CACHE    "Enable strict checks for OpenCL cache" ON)
 option(WITH_INTERLEAVE_DEBUG_LOG "Enable debug log for threads interleave" OFF)
-option(WITH_MO_BENCHMARK    "Enable Benchmark module and algo-perf feature (for MoneroOcean)" ON)
 option(WITH_PROFILING       "Enable profiling for developers" OFF)
 option(WITH_SSE4_1          "Enable SSE 4.1 for Blake2" ON)
 option(WITH_BENCHMARK       "Enable builtin RandomX benchmark and stress test" ON)
 option(WITH_SECURE_JIT      "Enable secure access to JIT memory" OFF)
 option(WITH_DMI             "Enable DMI/SMBIOS reader" ON)
+option(WITH_MO_BENCHMARK    "Enable Benchmark module and algo-perf feature (for MoneroOcean)" ON)
 
 option(BUILD_STATIC         "Build static binary" OFF)
 option(ARM_TARGET           "Force use specific ARM target 8 or 7" 0)
@@ -126,13 +126,6 @@ set(SOURCES_CRYPTO
     src/crypto/common/VirtualMemory.cpp
    )
 
-if (WITH_MO_BENCHMARK)
-    list(APPEND SOURCES
-        src/core/MoBenchmark.cpp
-        )
-    add_definitions(/DXMRIG_FEATURE_MO_BENCHMARK)
-endif()
-
 if (WITH_HWLOC)
     list(APPEND HEADERS_CRYPTO
         src/crypto/common/NUMAMemoryPool.h
@@ -224,6 +217,13 @@ include_directories(${UV_INCLUDE_DIR})
 
 if (WITH_DEBUG_LOG)
     add_definitions(/DAPP_DEBUG)
+endif()
+
+if (WITH_MO_BENCHMARK)
+    list(APPEND SOURCES
+        src/core/MoBenchmark.cpp
+        )
+    add_definitions(/DXMRIG_FEATURE_MO_BENCHMARK)
 endif()
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${TLS_SOURCES} ${XMRIG_ASM_SOURCES})

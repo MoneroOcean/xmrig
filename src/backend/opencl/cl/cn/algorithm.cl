@@ -17,8 +17,8 @@
 #define ALGO_CN_PICO_0      16
 #define ALGO_CN_PICO_TLO    17
 #define ALGO_CN_CCX         18
-#define ALGO_CN_GPU         19
-#define ALGO_CN_UPX2        20
+#define ALGO_CN_UPX2        19
+#define ALGO_CN_GPU         20
 #define ALGO_RX_0           21
 #define ALGO_RX_WOW         22
 #define ALGO_RX_ARQ         23
@@ -36,7 +36,8 @@
 #define FAMILY_CN_LITE      2
 #define FAMILY_CN_HEAVY     3
 #define FAMILY_CN_PICO      4
-#define FAMILY_RANDOM_X     5
-#define FAMILY_ARGON2       6
-#define FAMILY_ASTROBWT     7
-#define FAMILY_KAWPOW       8
+#define FAMILY_CN_FEMTO     5
+#define FAMILY_RANDOM_X     6
+#define FAMILY_ARGON2       7
+#define FAMILY_ASTROBWT     8
+#define FAMILY_KAWPOW       9

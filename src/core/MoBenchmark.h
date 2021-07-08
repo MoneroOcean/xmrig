@@ -35,13 +35,16 @@ class MoBenchmark : public IJobResultListener {
         enum BenchAlgo : int {
             CN_R,          // "cn/r"             CryptoNightR (Monero's variant 4).
             CN_LITE_1,     // "cn-lite/1"        CryptoNight-Lite variant 1.
-            CN_HEAVY_XHV,  // "cn-heavy/xhv"     CryptoNight-Heavy (modified, Haven Protocol only).
             CN_PICO_0,     // "cn-pico"          CryptoNight-Pico.
             CN_CCX,        // "cn/ccx"           Conceal (CCX).
+            CN_UPX2,       // "cn/upx2"          Uplexa (UPX2)
             CN_GPU,        // "cn/gpu"           CryptoNight-GPU (Ryo).
             AR2_CHUKWA_V2, // "argon2/chukwav2"  Argon2id (Chukwa v2).
             KAWPOW_RVN,    // "kawpow/rvn"       KawPow (RVN)
             ASTROBWT_DERO, // "astrobwt"         AstroBWT (Dero).
+            // below here use prefetch-disabled MSR setup, keep them grouped
+            // so MSR setting doesn't have to flip back and forth
+            CN_HEAVY_XHV,  // "cn-heavy/xhv"     CryptoNight-Heavy (modified, Haven Protocol only).
             RX_0,          // "rx/0"             RandomX (Monero).
             RX_WOW,        // "rx/wow"           RandomWOW (Wownero).
             RX_ARQ,        // "rx/arq"           RandomARQ (Arqma).
@@ -51,16 +54,18 @@ class MoBenchmark : public IJobResultListener {
             INVALID = -1,
         };
 
+        // these must be in the same order as above BenchAlgo
         const Algorithm::Id ba2a[BenchAlgo::MAX] = {
             Algorithm::CN_R,
             Algorithm::CN_LITE_1,
-            Algorithm::CN_HEAVY_XHV,
             Algorithm::CN_PICO_0,
             Algorithm::CN_CCX,
+            Algorithm::CN_UPX2,
             Algorithm::CN_GPU,
             Algorithm::AR2_CHUKWA_V2,
             Algorithm::KAWPOW_RVN,
             Algorithm::ASTROBWT_DERO,
+            Algorithm::CN_HEAVY_XHV,
             Algorithm::RX_0,
             Algorithm::RX_WOW,
             Algorithm::RX_ARQ,
