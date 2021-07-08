@@ -40,13 +40,13 @@ extern "C" {
 	void randomx_program_loop_load_xop();
 	void randomx_program_start();
 	void randomx_program_read_dataset();
-	void randomx_program_read_dataset_ryzen();
 	void randomx_program_read_dataset_sshash_init();
 	void randomx_program_read_dataset_sshash_fin();
 	void randomx_program_loop_store();
 	void randomx_program_loop_end();
 	void randomx_dataset_init();
 	void randomx_dataset_init_avx2_prologue();
+	void randomx_dataset_init_avx2_loop_begin();
 	void randomx_dataset_init_avx2_loop_end();
 	void randomx_dataset_init_avx2_epilogue();
 	void randomx_dataset_init_avx2_ssh_load();

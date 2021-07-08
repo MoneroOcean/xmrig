@@ -46,6 +46,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 
 #include <cassert>
+#if defined(APP_DEBUG)
+#include <iostream>
+#endif
 
 extern "C" {
 #include "crypto/randomx/panthera/yespower.h"
@@ -186,23 +189,6 @@ RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 		return p;
 	};
 
-	{
-		const uint8_t* a = addr(randomx_sshash_prefetch);
-		const uint8_t* b = addr(randomx_sshash_end);
-		memcpy(codeShhPrefetchTweaked, a, b - a);
-	}
-	{
-		const uint8_t* a = addr(randomx_program_read_dataset);
-		const uint8_t* b = addr(randomx_program_read_dataset_ryzen);
-		memcpy(codeReadDatasetTweaked, a, b - a);
-		codeReadDatasetTweakedSize = b - a;
-	}
-	{
-		const uint8_t* a = addr(randomx_program_read_dataset_ryzen);
-		const uint8_t* b = addr(randomx_program_read_dataset_sshash_init);
-		memcpy(codeReadDatasetRyzenTweaked, a, b - a);
-		codeReadDatasetRyzenTweakedSize = b - a;
-	}
 	if (xmrig::Cpu::info()->hasBMI2()) {
 		const uint8_t* a = addr(randomx_prefetch_scratchpad_bmi2);
 		const uint8_t* b = addr(randomx_prefetch_scratchpad_end);
@@ -214,6 +200,38 @@ RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 		const uint8_t* b = addr(randomx_prefetch_scratchpad_bmi2);
 		memcpy(codePrefetchScratchpadTweaked, a, b - a);
 		codePrefetchScratchpadTweakedSize = b - a;
+	}
+	{
+		const uint8_t* a = addr(randomx_program_read_dataset);
+		const uint8_t* b = addr(randomx_program_read_dataset_sshash_init);
+		memcpy(codeReadDatasetTweaked, a, b - a);
+	}
+	{
+		const uint8_t* a = addr(randomx_program_read_dataset_sshash_init);
+		const uint8_t* b = addr(randomx_program_read_dataset_sshash_fin);
+		memcpy(codeReadDatasetLightSshInitTweaked, a, b - a);
+	}
+	{
+		const uint8_t* a = addr(randomx_dataset_init_avx2_prologue);
+		const uint8_t* b = addr(randomx_dataset_init_avx2_loop_begin);
+		const uint8_t* c = addr(randomx_dataset_init_avx2_loop_end);
+		memcpy(codeDatasetInitAVX2PrologueTweaked, a, c - a);
+		codeDatasetInitAVX2LoopBeginOffset = b - a;
+	}
+	{
+		const uint8_t* a = addr(randomx_dataset_init_avx2_ssh_prefetch);
+		const uint8_t* b = addr(randomx_program_epilogue);
+		memcpy(codeDatasetInitAVX2SshPrefetchTweaked, a, b - a);
+	}
+	{
+		const uint8_t* a = addr(randomx_sshash_prefetch);
+		const uint8_t* b = addr(randomx_sshash_end);
+		memcpy(codeShhPrefetchTweaked, a, b - a);
+	}
+	{
+		const uint8_t* a = addr(randomx_sshash_init);
+		const uint8_t* b = addr(randomx_program_end);
+		memcpy(codeShhInitTweaked, a, b - a);
 	}
 #	endif
 }
@@ -241,16 +259,43 @@ void RandomX_ConfigurationBase::Apply()
 
 	ScratchpadL3Mask_Calculated = (((ScratchpadL3_Size / sizeof(uint64_t)) - 1) * 8);
 	ScratchpadL3Mask64_Calculated = ((ScratchpadL3_Size / sizeof(uint64_t)) / 8 - 1) * 64;
-        CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
+	CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
+	DatasetBaseMask_Calculated = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
 
 #if defined(XMRIG_FEATURE_ASM) && (defined(_M_X64) || defined(__x86_64__))
+#	if defined(APP_DEBUG)
+	std::cout << "\naPT:" << std::hex << (uint64_t)codeDatasetInitAVX2PrologueTweaked << "; aLB:" << codeDatasetInitAVX2LoopBeginOffset << "\n";
+	std::cout << "o34:" << std::hex << ((uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 34))[0] << "\n";
+	std::cout << "o54:" << std::hex << ((uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 54))[0] << "\n";
+	std::cout << "o78:" << std::hex << ((uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 78))[0] << "\n";
+	std::cout << "o103:" << std::hex << ((uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 103))[0] << "\n";
+	std::cout << "o128:" << std::hex << ((uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 128))[0] << "\n";
+	std::cout << "\naSIT:" << std::hex << (uint64_t)codeShhInitTweaked << "\n";
+	std::cout << "o7:" << std::hex << ((uint32_t*)(codeShhInitTweaked + 7))[0] << "\n";
+	std::cout << "\naRDT:" << std::hex << (uint64_t)codeReadDatasetTweaked << "\n";
+	std::cout << "o4:" << std::hex << ((uint32_t*)(codeReadDatasetTweaked + 4))[0] << "\n";
+	std::cout << "o23:" << std::hex << ((uint32_t*)(codeReadDatasetTweaked + 23))[0] << "\n";
+	std::cout << "\naRDLSIT:" << std::hex << (uint64_t)codeReadDatasetLightSshInitTweaked << "\n";
+	std::cout << "o62:" << std::hex << ((uint32_t*)(codeReadDatasetLightSshInitTweaked + 67))[0] << "\n";
+#	endif
+
 	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
-	const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
-	*(uint32_t*)(codeReadDatasetRyzenTweaked + 9) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetRyzenTweaked + 24) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetTweaked + 7) = DatasetBaseMask;
-	*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask;
-	//*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 59) = DatasetBaseMask;
+
+	*(uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 34) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 54) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 78) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 103) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2PrologueTweaked + codeDatasetInitAVX2LoopBeginOffset + 128) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2SshPrefetchTweaked + 11) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2SshPrefetchTweaked + 36) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2SshPrefetchTweaked + 62) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeDatasetInitAVX2SshPrefetchTweaked + 88) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeShhInitTweaked + 7) = ArgonMemory * 16 - 1;
+
+	*(uint32_t*)(codeDatasetInitAVX2PrologueTweaked + 23) = DatasetBaseMask_Calculated;
+	*(uint32_t*)(codeReadDatasetTweaked + 4) = DatasetBaseMask_Calculated;
+	*(uint32_t*)(codeReadDatasetTweaked + 23) = DatasetBaseMask_Calculated;
+	*(uint32_t*)(codeReadDatasetLightSshInitTweaked + 67) = DatasetBaseMask_Calculated / 64;
 
 	const bool hasBMI2 = xmrig::Cpu::info()->hasBMI2();
 

@@ -48,13 +48,13 @@
 .global DECL(randomx_program_loop_load_xop)
 .global DECL(randomx_program_start)
 .global DECL(randomx_program_read_dataset)
-.global DECL(randomx_program_read_dataset_ryzen)
 .global DECL(randomx_program_read_dataset_sshash_init)
 .global DECL(randomx_program_read_dataset_sshash_fin)
 .global DECL(randomx_program_loop_store)
 .global DECL(randomx_program_loop_end)
 .global DECL(randomx_dataset_init)
 .global DECL(randomx_dataset_init_avx2_prologue)
+.global DECL(randomx_dataset_init_avx2_loop_begin)
 .global DECL(randomx_dataset_init_avx2_loop_end)
 .global DECL(randomx_dataset_init_avx2_epilogue)
 .global DECL(randomx_dataset_init_avx2_ssh_load)
@@ -140,9 +140,6 @@ DECL(randomx_program_start):
 DECL(randomx_program_read_dataset):
 	#include "asm/program_read_dataset.inc"
 
-DECL(randomx_program_read_dataset_ryzen):
-	#include "asm/program_read_dataset_ryzen.inc"
-
 DECL(randomx_program_read_dataset_sshash_init):
 	#include "asm/program_read_dataset_sshash_init.inc"
 
@@ -225,11 +222,11 @@ DECL(randomx_dataset_init_avx2_prologue):
 #endif
 	sub rsp, 40
 
-	jmp randomx_dataset_init_avx2_prologue_loop_begin
+	jmp DECL(randomx_dataset_init_avx2_loop_begin)
 	#include "asm/program_sshash_avx2_constants.inc"
 
 .balign 64
-randomx_dataset_init_avx2_prologue_loop_begin:
+DECL(randomx_dataset_init_avx2_loop_begin):
 	#include "asm/program_sshash_avx2_loop_begin.inc"
 
 	;# init integer registers (lane 0)
