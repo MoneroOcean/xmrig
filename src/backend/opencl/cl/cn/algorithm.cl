@@ -23,6 +23,7 @@
 #define ALGO_RX_WOW         0x72141177
 #define ALGO_RX_ARQ         0x72121061
 #define ALGO_RX_XEQ         0x72121000
+#define ALGO_RX_XLA         0x721211ff
 #define ALGO_RX_SFX         0x72151273
 #define ALGO_RX_GRAFT       0x72151267
 #define ALGO_RX_YADA        0x72151279
@@ -30,8 +31,6 @@
 #define ALGO_AR2_CHUKWA_V2  0x61140000
 #define ALGO_AR2_WRKZ       0x61120000
 #define ALGO_KAWPOW_RVN     0x6b0f0000
-
-#define ALGO_RX_XLA         0x721211ff
 
 #define FAMILY_UNKNOWN      0
 #define FAMILY_CN           0x63150000
