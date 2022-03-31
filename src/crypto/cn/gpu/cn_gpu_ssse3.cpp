@@ -22,16 +22,16 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "crypto/cn/CnAlgo.h"
-
-
 #ifdef __GNUC__
 #   include <x86intrin.h>
 #else
 #   include <intrin.h>
 #   define __restrict__ __restrict
 #endif
+
+
+#include "crypto/cn/CnAlgo.h"
+
 
 inline void prep_dv(__m128i* idx, __m128i& v, __m128& n)
 {
@@ -131,22 +131,21 @@ template<size_t ITER, uint32_t MASK>
 void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
 {
     uint32_t s = reinterpret_cast<const uint32_t*>(spad)[0] >> 8;
-    __m128i* idx0 = scratchpad_ptr<MASK>(lpad, s, 0);
-    __m128i* idx1 = scratchpad_ptr<MASK>(lpad, s, 1);
-    __m128i* idx2 = scratchpad_ptr<MASK>(lpad, s, 2);
-    __m128i* idx3 = scratchpad_ptr<MASK>(lpad, s, 3);
+    __m128i* gdx0 = scratchpad_ptr<MASK>(lpad, s, 0);
+    __m128i* gdx1 = scratchpad_ptr<MASK>(lpad, s, 1);
+    __m128i* gdx2 = scratchpad_ptr<MASK>(lpad, s, 2);
+    __m128i* gdx3 = scratchpad_ptr<MASK>(lpad, s, 3);
     __m128 sum0 = _mm_setzero_ps();
 
-    for(size_t i = 0; i < ITER; i++)
-    {
+    for (size_t i = 0; i < ITER; i++) {
         __m128 n0, n1, n2, n3;
         __m128i v0, v1, v2, v3;
         __m128 suma, sumb, sum1, sum2, sum3;
 
-        prep_dv(idx0, v0, n0);
-        prep_dv(idx1, v1, n1);
-        prep_dv(idx2, v2, n2);
-        prep_dv(idx3, v3, n3);
+        prep_dv(gdx0, v0, n0);
+        prep_dv(gdx1, v1, n1);
+        prep_dv(gdx2, v2, n2);
+        prep_dv(gdx3, v3, n3);
         __m128 rc = sum0;
 
         __m128i out, out2;
@@ -156,7 +155,7 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
         single_compute_wrap<2>(n0, n3, n1, n2, 1.3593750f, rc, sumb, out);
         single_compute_wrap<3>(n0, n3, n2, n1, 1.3671875f, rc, sumb, out);
         sum0 = _mm_add_ps(suma, sumb);
-        _mm_store_si128(idx0, _mm_xor_si128(v0, out));
+        _mm_store_si128(gdx0, _mm_xor_si128(v0, out));
         out2 = out;
 
         out = _mm_setzero_si128();
@@ -165,7 +164,7 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
         single_compute_wrap<2>(n1, n3, n0, n2, 1.3828125f, rc, sumb, out);
         single_compute_wrap<3>(n1, n3, n2, n0, 1.3046875f, rc, sumb, out);
         sum1 = _mm_add_ps(suma, sumb);
-        _mm_store_si128(idx1, _mm_xor_si128(v1, out));
+        _mm_store_si128(gdx1, _mm_xor_si128(v1, out));
         out2 = _mm_xor_si128(out2, out);
 
         out = _mm_setzero_si128();
@@ -174,7 +173,7 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
         single_compute_wrap<2>(n2, n3, n1, n0, 1.2578125f, rc, sumb, out);
         single_compute_wrap<3>(n2, n3, n0, n1, 1.2890625f, rc, sumb, out);
         sum2 = _mm_add_ps(suma, sumb);
-        _mm_store_si128(idx2, _mm_xor_si128(v2, out));
+        _mm_store_si128(gdx2, _mm_xor_si128(v2, out));
         out2 = _mm_xor_si128(out2, out);
 
         out = _mm_setzero_si128();
@@ -183,7 +182,7 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
         single_compute_wrap<2>(n3, n0, n1, n2, 1.3359375f, rc, sumb, out);
         single_compute_wrap<3>(n3, n0, n2, n1, 1.4609375f, rc, sumb, out);
         sum3 = _mm_add_ps(suma, sumb);
-        _mm_store_si128(idx3, _mm_xor_si128(v3, out));
+        _mm_store_si128(gdx3, _mm_xor_si128(v3, out));
         out2 = _mm_xor_si128(out2, out);
         sum0 = _mm_add_ps(sum0, sum1);
         sum2 = _mm_add_ps(sum2, sum3);
@@ -202,10 +201,10 @@ void cn_gpu_inner_ssse3(const uint8_t* spad, uint8_t* lpad)
         // vs is now between 0 and 1
         sum0 = _mm_div_ps(sum0, _mm_set1_ps(64.0f));
         uint32_t n = _mm_cvtsi128_si32(v0);
-        idx0 = scratchpad_ptr<MASK>(lpad, n, 0);
-        idx1 = scratchpad_ptr<MASK>(lpad, n, 1);
-        idx2 = scratchpad_ptr<MASK>(lpad, n, 2);
-        idx3 = scratchpad_ptr<MASK>(lpad, n, 3);
+        gdx0 = scratchpad_ptr<MASK>(lpad, n, 0);
+        gdx1 = scratchpad_ptr<MASK>(lpad, n, 1);
+        gdx2 = scratchpad_ptr<MASK>(lpad, n, 2);
+        gdx3 = scratchpad_ptr<MASK>(lpad, n, 3);
     }
 }
 
