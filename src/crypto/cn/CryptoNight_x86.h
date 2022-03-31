@@ -301,7 +301,7 @@ static NOINLINE void cn_explode_scratchpad(cryptonight_ctx *ctx)
     constexpr CnAlgo<ALGO> props;
 
 #   ifdef XMRIG_ALGO_CN_GPU
-    constexpr bool IS_HEAVY = props.isHeavy() || ALGO == Algorithm::CN_GPU;
+    constexpr bool IS_HEAVY = props.isHeavy() || props.isGPU();
 #   else
     constexpr bool IS_HEAVY = props.isHeavy();
 #   endif
@@ -320,6 +320,31 @@ static NOINLINE void cn_explode_scratchpad(cryptonight_ctx *ctx)
 
     const __m128i* input = reinterpret_cast<const __m128i*>(ctx->state);
     __m128i* output = reinterpret_cast<__m128i*>(ctx->memory);
+
+#   ifdef XMRIG_ALGO_CN_GPU
+    if (props.isGPU()) {
+        constexpr size_t hash_size = 200; // 25x8 bytes
+        alignas(16) uint64_t hash[25];
+
+        for (uint64_t i = 0; i < props.memory() / 512; i++) {
+            memcpy(hash, input, hash_size);
+            hash[0] ^= i;
+
+            keccakf(hash, 24);
+            memcpy(output, hash, 160);
+            output += 160;
+
+            keccakf(hash, 24);
+            memcpy(output, hash, 176);
+            output += 176;
+
+            keccakf(hash, 24);
+            memcpy(output, hash, 176);
+            output += 176;
+        }
+        return;
+    }
+#   endif
 
     aes_genkey<SOFT_AES>(input, &k0, &k1, &k2, &k3, &k4, &k5, &k6, &k7, &k8, &k9);
 
@@ -421,7 +446,7 @@ static NOINLINE void cn_implode_scratchpad(cryptonight_ctx *ctx)
     constexpr CnAlgo<ALGO> props;
 
 #   ifdef XMRIG_ALGO_CN_GPU
-    constexpr bool IS_HEAVY = props.isHeavy() || ALGO == Algorithm::CN_GPU;
+    constexpr bool IS_HEAVY = props.isHeavy() || props.isGPU();
 #   else
     constexpr bool IS_HEAVY = props.isHeavy();
 #   endif
@@ -730,19 +755,207 @@ inline void cryptonight_single_hash(const uint8_t *__restrict__ input, size_t si
     VARIANT2_SET_ROUNDING_MODE();
     VARIANT4_RANDOM_MATH_INIT(0);
 
-    uint64_t al0  = h0[0] ^ h0[4];
-    uint64_t ah0  = h0[1] ^ h0[5];
-    uint64_t idx0 = al0;
-    __m128i bx0   = _mm_set_epi64x(static_cast<int64_t>(h0[3] ^ h0[7]), static_cast<int64_t>(h0[2] ^ h0[6]));
-    __m128i bx1   = _mm_set_epi64x(static_cast<int64_t>(h0[9] ^ h0[11]), static_cast<int64_t>(h0[8] ^ h0[10]));
-
+    uint64_t al0;
+    uint64_t ah0;
+    uint64_t idx0;
+    __m128i bx0;
+    __m128i bx1;
     __m128 conc_var;
+#   ifdef XMRIG_ALGO_CN_GPU
+    constexpr bool isAVX2 = Cpu::info()->hasAVX2();
+    const uint8_t* spad = ctx[0]->state;
+    uint8_t* lpad = ctx[0]->memory;
+
+#   ifndef _mm256_bslli_epi128
+#       define _mm256_bslli_epi128(a, count) _mm256_slli_si256((a), (count))
+#   endif
+#   ifndef _mm256_bsrli_epi128
+#       define _mm256_bsrli_epi128(a, count) _mm256_srli_si256((a), (count))
+#   endif
+
+    uint32_t s;
+    __m128i* idx0s;
+    __m128i* idx1s;
+    __m128i* idx2s;
+    __m128i* idx3s;
+    __m128 sum0s;
+    __m128 n0, n1, n2, n3;
+    __m128i v0, v1, v2, v3;
+    __m128 sumas, sumbs, sum1s, sum2s, sum3s;
+
+    __m256i* idx0a;
+    __m256i* idx2a;
+    __m256 sum0a;
+    __m256i v01, v23;
+    __m256 sumaa, sumba, sum1a;
+    __m256 rc = sum0a;
+    __m256 n01, n23;
+    __m256i out, out2;
+    __m256 n10, n22, n33;
+    __m256 n11, n02, n30;
+    __m128 sum;
+
+    if (!props.isGPU()) {
+#   endif
+    al0  = h0[0] ^ h0[4];
+    ah0  = h0[1] ^ h0[5];
+    idx0 = al0;
+    bx0   = _mm_set_epi64x(static_cast<int64_t>(h0[3] ^ h0[7]), static_cast<int64_t>(h0[2] ^ h0[6]));
+    bx1   = _mm_set_epi64x(static_cast<int64_t>(h0[9] ^ h0[11]), static_cast<int64_t>(h0[8] ^ h0[10]));
+
     if (ALGO == Algorithm::CN_CCX) {
         conc_var = _mm_setzero_ps();
         RESTORE_ROUNDING_MODE();
     }
+#   ifdef XMRIG_ALGO_CN_GPU
+    } else {
+        RESTORE_ROUNDING_MODE();
+        s = reinterpret_cast<const uint32_t*>(spad)[0] >> 8;
+        if (isAVX2) {
+            idx0a = scratchpad_ptr<MASK>(lpad, s, 0);
+            idx2a = scratchpad_ptr<MASK>(lpad, s, 2);
+            sum0a = _mm256_setzero_ps();
+        } else {
+            idx0s = scratchpad_ptr<MASK>(lpad, s, 0);
+            idx1s = scratchpad_ptr<MASK>(lpad, s, 1);
+            idx2s = scratchpad_ptr<MASK>(lpad, s, 2);
+            idx3s = scratchpad_ptr<MASK>(lpad, s, 3);
+            sum0s = _mm_setzero_ps();
+        }
+    }
+
+#   endif
 
     for (size_t i = 0; i < props.iterations(); i++) {
+#       ifdef XMRIG_ALGO_CN_GPU
+        if (props.isGPU()) {
+            if (isAVX2) {
+                // cn_gpu_inner_avx<props.iterations(), MASK>(ctx[0]->state, ctx[0]->memory);
+                rc = sum0a;
+
+                prep_dv_avx(idx0a, v01, n01);
+                prep_dv_avx(idx2a, v23, n23);
+
+                n10 = _mm256_permute2f128_ps(n01, n01, 0x01);
+                n22 = _mm256_permute2f128_ps(n23, n23, 0x00);
+                n33 = _mm256_permute2f128_ps(n23, n23, 0x11);
+
+                out = _mm256_setzero_si256();
+                double_compute_wrap<0>(n01, n10, n22, n33, 1.3437500f, 1.4296875f, rc, suma, out);
+                double_compute_wrap<1>(n01, n22, n33, n10, 1.2812500f, 1.3984375f, rc, suma, out);
+                double_compute_wrap<2>(n01, n33, n10, n22, 1.3593750f, 1.3828125f, rc, sumb, out);
+                double_compute_wrap<3>(n01, n33, n22, n10, 1.3671875f, 1.3046875f, rc, sumb, out);
+                _mm256_store_si256(idx0a, _mm256_xor_si256(v01, out));
+                sum0a = _mm256_add_ps(suma, sumb);
+                out2 = out;
+
+                n11 = _mm256_permute2f128_ps(n01, n01, 0x11);
+                n02 = _mm256_permute2f128_ps(n01, n23, 0x20);
+                n30 = _mm256_permute2f128_ps(n01, n23, 0x03);
+
+                out = _mm256_setzero_si256();
+                double_compute_wrap<0>(n23, n11, n02, n30, 1.4140625f, 1.3203125f, rc, suma, out);
+                double_compute_wrap<1>(n23, n02, n30, n11, 1.2734375f, 1.3515625f, rc, suma, out);
+                double_compute_wrap<2>(n23, n30, n11, n02, 1.2578125f, 1.3359375f, rc, sumb, out);
+                double_compute_wrap<3>(n23, n30, n02, n11, 1.2890625f, 1.4609375f, rc, sumb, out);
+                _mm256_store_si256(idx2a, _mm256_xor_si256(v23, out));
+                sum1 = _mm256_add_ps(suma, sumb);
+
+                out2 = _mm256_xor_si256(out2, out);
+                out2 = _mm256_xor_si256(_mm256_permute2x128_si256(out2,out2,0x41), out2);
+                suma = _mm256_permute2f128_ps(sum0a, sum1, 0x30);
+                sumb = _mm256_permute2f128_ps(sum0a, sum1, 0x21);
+                sum0a = _mm256_add_ps(suma, sumb);
+                sum0a = _mm256_add_ps(sum0a, _mm256_permute2f128_ps(sum0a, sum0a, 0x41));
+
+                // Clear the high 128 bits
+                sum = _mm256_castps256_ps128(sum0a);
+
+                sum = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0x7fffffff)), sum); // take abs(va) by masking the float sign bit
+                // vs range 0 - 64
+                __m128i v0 = _mm_cvttps_epi32(_mm_mul_ps(sum, _mm_set1_ps(16777216.0f)));
+                v0 = _mm_xor_si128(v0, _mm256_castsi256_si128(out2));
+                __m128i v1 = _mm_shuffle_epi32(v0, _MM_SHUFFLE(0, 1, 2, 3));
+                v0 = _mm_xor_si128(v0, v1);
+                v1 = _mm_shuffle_epi32(v0, _MM_SHUFFLE(0, 1, 0, 1));
+                v0 = _mm_xor_si128(v0, v1);
+
+                // vs is now between 0 and 1
+                sum = _mm_div_ps(sum, _mm_set1_ps(64.0f));
+                sum0a = _mm256_insertf128_ps(_mm256_castps128_ps256(sum), sum, 1);
+                uint32_t n = _mm_cvtsi128_si32(v0);
+                idx0a = scratchpad_ptr<MASK>(lpad, n, 0);
+                idx2a = scratchpad_ptr<MASK>(lpad, n, 2);
+            } else {
+                //cn_gpu_inner_ssse3<props.iterations(), MASK>(ctx[0]->state, ctx[0]->memory);
+                prep_dv(idx0s, v0, n0);
+                prep_dv(idx1s, v1, n1);
+                prep_dv(idx2s, v2, n2);
+                prep_dv(idx3s, v3, n3);
+                __m128 rc = sum0s;
+
+                __m128i out, out2;
+                out = _mm_setzero_si128();
+                single_compute_wrap<0>(n0, n1, n2, n3, 1.3437500f, rc, suma, out);
+                single_compute_wrap<1>(n0, n2, n3, n1, 1.2812500f, rc, suma, out);
+                single_compute_wrap<2>(n0, n3, n1, n2, 1.3593750f, rc, sumb, out);
+                single_compute_wrap<3>(n0, n3, n2, n1, 1.3671875f, rc, sumb, out);
+                sum0s = _mm_add_ps(suma, sumb);
+                _mm_store_si128(idx0s, _mm_xor_si128(v0, out));
+                out2 = out;
+
+                out = _mm_setzero_si128();
+                single_compute_wrap<0>(n1, n0, n2, n3, 1.4296875f, rc, suma, out);
+                single_compute_wrap<1>(n1, n2, n3, n0, 1.3984375f, rc, suma, out);
+                single_compute_wrap<2>(n1, n3, n0, n2, 1.3828125f, rc, sumb, out);
+                single_compute_wrap<3>(n1, n3, n2, n0, 1.3046875f, rc, sumb, out);
+                sum1 = _mm_add_ps(suma, sumb);
+                _mm_store_si128(idx1s, _mm_xor_si128(v1, out));
+                out2 = _mm_xor_si128(out2, out);
+
+                out = _mm_setzero_si128();
+                single_compute_wrap<0>(n2, n1, n0, n3, 1.4140625f, rc, suma, out);
+                single_compute_wrap<1>(n2, n0, n3, n1, 1.2734375f, rc, suma, out);
+                single_compute_wrap<2>(n2, n3, n1, n0, 1.2578125f, rc, sumb, out);
+                single_compute_wrap<3>(n2, n3, n0, n1, 1.2890625f, rc, sumb, out);
+                sum2 = _mm_add_ps(suma, sumb);
+                _mm_store_si128(idx2s, _mm_xor_si128(v2, out));
+                out2 = _mm_xor_si128(out2, out);
+
+                out = _mm_setzero_si128();
+                single_compute_wrap<0>(n3, n1, n2, n0, 1.3203125f, rc, suma, out);
+                single_compute_wrap<1>(n3, n2, n0, n1, 1.3515625f, rc, suma, out);
+                single_compute_wrap<2>(n3, n0, n1, n2, 1.3359375f, rc, sumb, out);
+                single_compute_wrap<3>(n3, n0, n2, n1, 1.4609375f, rc, sumb, out);
+                sum3 = _mm_add_ps(suma, sumb);
+                _mm_store_si128(idx3s, _mm_xor_si128(v3, out));
+                out2 = _mm_xor_si128(out2, out);
+                sum0s = _mm_add_ps(sum0s, sum1);
+                sum2 = _mm_add_ps(sum2, sum3);
+                sum0s = _mm_add_ps(sum0s, sum2);
+
+                sum0s = _mm_and_ps(_mm_castsi128_ps(_mm_set1_epi32(0x7fffffff)), sum0s); // take abs(va) by masking the float sign bit
+                // vs range 0 - 64
+                n0 = _mm_mul_ps(sum0s, _mm_set1_ps(16777216.0f));
+                v0 = _mm_cvttps_epi32(n0);
+                v0 = _mm_xor_si128(v0, out2);
+                v1 = _mm_shuffle_epi32(v0, _MM_SHUFFLE(0, 1, 2, 3));
+                v0 = _mm_xor_si128(v0, v1);
+                v1 = _mm_shuffle_epi32(v0, _MM_SHUFFLE(0, 1, 0, 1));
+                v0 = _mm_xor_si128(v0, v1);
+
+                // vs is now between 0 and 1
+                sum0s = _mm_div_ps(sum0s, _mm_set1_ps(64.0f));
+                uint32_t n = _mm_cvtsi128_si32(v0);
+                idx0s = scratchpad_ptr<MASK>(lpad, n, 0);
+                idx1s = scratchpad_ptr<MASK>(lpad, n, 1);
+                idx2s = scratchpad_ptr<MASK>(lpad, n, 2);
+                idx3s = scratchpad_ptr<MASK>(lpad, n, 3);
+            }
+            continue;
+        }
+#       endif
+
         __m128i cx;
         if (IS_CN_HEAVY_TUBE || !SOFT_AES) {
             cx = _mm_load_si128(reinterpret_cast<const __m128i *>(&l0[interleaved_index<interleave>(idx0 & MASK)]));
@@ -859,6 +1072,9 @@ inline void cryptonight_single_hash(const uint8_t *__restrict__ input, size_t si
 
     cn_implode_scratchpad<ALGO, SOFT_AES, interleave>(ctx[0]);
     keccakf(h0, 24);
+#   ifdef XMRIG_ALGO_CN_GPU
+    if (props.isGPU()) { memcpy(output, ctx[0]->state, 32); return; }
+#   endif
     if (height == 101) // Flex algo ugly hack
       extra_hashes_flex[ctx[0]->state[0] & 2](ctx[0]->state, 200, output);
     else
@@ -881,41 +1097,15 @@ void cn_gpu_inner_ssse3(const uint8_t *spad, uint8_t *lpad);
 namespace xmrig {
 
 
-template<size_t MEM>
-static NOINLINE void cn_explode_scratchpad_gpu(cryptonight_ctx *ctx)
-{
-    const uint8_t* input = reinterpret_cast<const uint8_t*>(ctx->state);
-    uint8_t* output = reinterpret_cast<uint8_t*>(ctx->memory);
-
-    constexpr size_t hash_size = 200; // 25x8 bytes
-    alignas(16) uint64_t hash[25];
-
-    for (uint64_t i = 0; i < MEM / 512; i++) {
-        memcpy(hash, input, hash_size);
-        hash[0] ^= i;
-
-        xmrig::keccakf(hash, 24);
-        memcpy(output, hash, 160);
-        output += 160;
-
-        xmrig::keccakf(hash, 24);
-        memcpy(output, hash, 176);
-        output += 176;
-
-        xmrig::keccakf(hash, 24);
-        memcpy(output, hash, 176);
-        output += 176;
-    }
-}
-
-
 template<Algorithm::Id ALGO, bool SOFT_AES>
 inline void cryptonight_single_hash_gpu(const uint8_t *__restrict__ input, size_t size, uint8_t *__restrict__ output, cryptonight_ctx **__restrict__ ctx, uint64_t height)
 {
     constexpr CnAlgo<ALGO> props;
+    constexpr size_t MASK        = props.mask();
+    constexpr Algorithm::Id BASE = props.base();
 
     keccak(input, size, ctx[0]->state);
-    cn_explode_scratchpad_gpu<props.memory()>(ctx[0]);
+    cn_explode_scratchpad<ALGO, SOFT_AES, interleave>(ctx[0]);
 
 #   ifdef _MSC_VER
     _control87(RC_NEAR, MCW_RC);
@@ -924,12 +1114,12 @@ inline void cryptonight_single_hash_gpu(const uint8_t *__restrict__ input, size_
 #   endif
 
     if (xmrig::Cpu::info()->hasAVX2()) {
-        cn_gpu_inner_avx<props.iterations(), props.mask()>(ctx[0]->state, ctx[0]->memory);
+        cn_gpu_inner_avx<props.iterations(), MASK>(ctx[0]->state, ctx[0]->memory);
     } else {
-        cn_gpu_inner_ssse3<props.iterations(), props.mask()>(ctx[0]->state, ctx[0]->memory);
+        cn_gpu_inner_ssse3<props.iterations(), MASK>(ctx[0]->state, ctx[0]->memory);
     }
 
-    cn_implode_scratchpad<ALGO, SOFT_AES, 0>(ctx[0]);
+    cn_implode_scratchpad<ALGO, SOFT_AES, interleave>(ctx[0]);
     keccakf(reinterpret_cast<uint64_t*>(ctx[0]->state), 24);
     memcpy(output, ctx[0]->state, 32);
 }
