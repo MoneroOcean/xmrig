@@ -149,8 +149,22 @@ void xmrig::Network::onActive(IStrategy *strategy, IClient *client)
 
 void xmrig::Network::onConfigChanged(Config *config, Config *previousConfig)
 {
-    if (config->pools() == previousConfig->pools() || !config->pools().active()) {
+    if (!config->pools().active() ||
+         (config->pools() == previousConfig->pools() &&
+          config->algoMinTime() == previousConfig->algoMinTime() &&
+          config->benchmark().compare_perf(previousConfig)
+         )
+    ) {
         return;
+    }
+    if (config->pools() != previousConfig->pools()) {
+        LOG_WARN("%s " YELLOW("-> pools changed, reconnecting"), Tags::config());
+    }
+    if (config->algoMinTime() != previousConfig->algoMinTime()) {
+        LOG_WARN("%s " YELLOW("-> algo-min-time changed, reconnecting"), Tags::config());
+    }
+    if (!config->benchmark().compare_perf(previousConfig)) {
+        LOG_WARN("%s " YELLOW("-> algo-perf changed, reconnecting"), Tags::config());
     }
 
     m_strategy->stop();
