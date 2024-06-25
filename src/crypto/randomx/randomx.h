@@ -76,9 +76,9 @@ struct RandomX_ConfigurationBase
 		ConditionMask_Calculated = ((1 << JumpBits) - 1) << JumpOffset,
 	};
 
-        uint32_t ArgonMemory;
-        uint32_t CacheAccesses;
-        uint32_t DatasetBaseSize;
+	uint32_t ArgonMemory;
+	uint32_t CacheAccesses;
+	uint32_t DatasetBaseSize;
 
 	uint32_t ArgonIterations;
 	uint32_t ArgonLanes;
@@ -134,11 +134,10 @@ struct RandomX_ConfigurationBase
 	uint8_t codePrefetchScratchpadTweaked[28];
 	uint32_t codePrefetchScratchpadTweakedSize;
 
-        uint32_t CacheLineAlignMask_Calculated;
-
 	uint32_t AddressMask_Calculated[4];
 	uint32_t ScratchpadL3Mask_Calculated;
 	uint32_t ScratchpadL3Mask64_Calculated;
+	uint32_t CacheLineAlignMask_Calculated;
 
 #	if (XMRIG_ARM == 8)
 	uint32_t Log2_ScratchpadL1;
@@ -156,7 +155,7 @@ struct RandomX_ConfigurationEquilibria : public RandomX_ConfigurationBase { Rand
 struct RandomX_ConfigurationGraft : public RandomX_ConfigurationBase { RandomX_ConfigurationGraft(); };
 struct RandomX_ConfigurationSafex : public RandomX_ConfigurationBase { RandomX_ConfigurationSafex(); };
 struct RandomX_ConfigurationKeva : public RandomX_ConfigurationBase { RandomX_ConfigurationKeva(); };
-struct RandomX_ConfigurationScala : public RandomX_ConfigurationBase { RandomX_ConfigurationScala(); };
+struct RandomX_ConfigurationScala2 : public RandomX_ConfigurationBase { RandomX_ConfigurationScala2(); };
 
 extern RandomX_ConfigurationMonero RandomX_MoneroConfig;
 extern RandomX_ConfigurationWownero RandomX_WowneroConfig;
@@ -165,7 +164,7 @@ extern RandomX_ConfigurationEquilibria RandomX_EquilibriaConfig;
 extern RandomX_ConfigurationGraft RandomX_GraftConfig;
 extern RandomX_ConfigurationSafex RandomX_SafexConfig;
 extern RandomX_ConfigurationKeva RandomX_KevaConfig;
-extern RandomX_ConfigurationScala RandomX_ScalaConfig;
+extern RandomX_ConfigurationScala2 RandomX_Scala2Config;
 
 extern RandomX_ConfigurationBase RandomX_CurrentConfig;
 

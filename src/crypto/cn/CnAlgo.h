@@ -40,6 +40,9 @@ public:
     constexpr inline Algorithm::Id base() const  { static_assert(Algorithm::isCN(ALGO), "invalid CRYPTONIGHT algorithm"); return Algorithm::base(ALGO); }
     constexpr inline bool isHeavy() const        { return Algorithm::family(ALGO) == Algorithm::CN_HEAVY; }
     constexpr inline bool isR() const            { return ALGO == Algorithm::CN_R; }
+#   ifdef XMRIG_ALGO_CN_GPU
+    constexpr inline bool isGPU() const          { return ALGO == Algorithm::CN_GPU; }
+#   endif
     constexpr inline size_t memory() const       { static_assert(Algorithm::isCN(ALGO), "invalid CRYPTONIGHT algorithm"); return Algorithm::l3(ALGO); }
     constexpr inline uint32_t iterations() const { static_assert(Algorithm::isCN(ALGO), "invalid CRYPTONIGHT algorithm"); return CN_ITER; }
     constexpr inline uint32_t mask() const       { return static_cast<uint32_t>(((memory() - 1) / 16) * 16); }
