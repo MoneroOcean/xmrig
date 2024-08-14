@@ -84,6 +84,7 @@ const char *Algorithm::kRX_0            = "rx/0";
 const char *Algorithm::kRX_WOW          = "rx/wow";
 const char *Algorithm::kRX_ARQ          = "rx/arq";
 const char *Algorithm::kRX_XEQ          = "rx/xeq";
+const char *Algorithm::kRX_XLA          = "panthera";
 const char *Algorithm::kRX_GRAFT        = "rx/graft";
 const char *Algorithm::kRX_SFX          = "rx/sfx";
 const char *Algorithm::kRX_KEVA         = "rx/keva";
@@ -107,10 +108,6 @@ const char* Algorithm::kGHOSTRIDER      = "ghostrider";
 const char* Algorithm::kGHOSTRIDER_RTM  = "ghostrider";
 const char* Algorithm::kFLEX            = "flex";
 const char* Algorithm::kFLEX_KCN        = "flex";
-#endif
-
-#ifdef XMRIG_ALGO_RANDOMX
-const char *Algorithm::kRX_XLA          = "panthera";
 #endif
 
 
@@ -287,6 +284,7 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
                                     ALGO_ALIAS(RX_ARQ,          "randomarq"),
     ALGO_ALIAS_AUTO(RX_XEQ),        ALGO_ALIAS(RX_XEQ,          "randomx/xeq"),
                                     ALGO_ALIAS(RX_XEQ,          "randomxeq"),
+    ALGO_ALIAS_AUTO(RX_XLA),        ALGO_ALIAS(RX_XLA,          "Panthera"),
     ALGO_ALIAS_AUTO(RX_GRAFT),      ALGO_ALIAS(RX_GRAFT,        "randomx/graft"),
                                     ALGO_ALIAS(RX_GRAFT,        "randomgraft"),
     ALGO_ALIAS_AUTO(RX_SFX),        ALGO_ALIAS(RX_SFX,          "randomx/sfx"),
@@ -305,10 +303,6 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
 
 #   ifdef XMRIG_ALGO_KAWPOW
     ALGO_ALIAS_AUTO(KAWPOW_RVN),    ALGO_ALIAS(KAWPOW_RVN,      "kawpow/rvn"),
-#   endif
-
-#   ifdef XMRIG_ALGO_RANDOMX
-    ALGO_ALIAS_AUTO(RX_XLA),        ALGO_ALIAS(RX_XLA,          "Panthera"),
 #   endif
 
 #   ifdef XMRIG_ALGO_GHOSTRIDER

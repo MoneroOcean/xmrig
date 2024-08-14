@@ -268,7 +268,7 @@ void RandomX_ConfigurationBase::Apply()
 
 	ScratchpadL3Mask_Calculated = (((ScratchpadL3_Size / sizeof(uint64_t)) - 1) * 8);
 	ScratchpadL3Mask64_Calculated = ((ScratchpadL3_Size / sizeof(uint64_t)) / 8 - 1) * 64;
-        CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
+	CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1);
 
 #if defined(XMRIG_FEATURE_ASM) && (defined(_M_X64) || defined(__x86_64__))
 	*(uint32_t*)(codeShhPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
@@ -639,8 +639,8 @@ extern "C" {
 		assert(inputSize == 0 || input != nullptr);
 		assert(output != nullptr);
 		alignas(16) uint64_t tempHash[8];
-                switch (algo) {
-                    case xmrig::Algorithm::RX_XLA:   rx_yespower_k12(tempHash, sizeof(tempHash), input, inputSize); break;
+		switch (algo) {
+		    case xmrig::Algorithm::RX_XLA: rx_yespower_k12(tempHash, sizeof(tempHash), input, inputSize); break;
 		    default: rx_blake2b_wrapper::run(tempHash, sizeof(tempHash), input, inputSize);
 		}
 		machine->initScratchpad(&tempHash);
@@ -654,8 +654,8 @@ extern "C" {
 	}
 
 	void randomx_calculate_hash_first(randomx_vm* machine, uint64_t (&tempHash)[8], const void* input, size_t inputSize, const xmrig::Algorithm algo) {
-                switch (algo) {
-                    case xmrig::Algorithm::RX_XLA:   rx_yespower_k12(tempHash, sizeof(tempHash), input, inputSize); break;
+		switch (algo) {
+		    case xmrig::Algorithm::RX_XLA: rx_yespower_k12(tempHash, sizeof(tempHash), input, inputSize); break;
 		    default: rx_blake2b_wrapper::run(tempHash, sizeof(tempHash), input, inputSize);
 		}
 		machine->initScratchpad(tempHash);
@@ -672,8 +672,8 @@ extern "C" {
 		machine->run(&tempHash);
 
 		// Finish current hash and fill the scratchpad for the next hash at the same time
-                switch (algo) {
-                    case xmrig::Algorithm::RX_XLA:   rx_yespower_k12(tempHash, sizeof(tempHash), nextInput, nextInputSize); break;
+		switch (algo) {
+		    case xmrig::Algorithm::RX_XLA: rx_yespower_k12(tempHash, sizeof(tempHash), nextInput, nextInputSize); break;
 		    default: rx_blake2b_wrapper::run(tempHash, sizeof(tempHash), nextInput, nextInputSize);
 		}
 		machine->hashAndFill(output, tempHash);
