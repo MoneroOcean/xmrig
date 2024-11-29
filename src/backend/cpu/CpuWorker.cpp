@@ -198,11 +198,6 @@ bool xmrig::CpuWorker<N>::selfTest()
 #                       endif
                         ;
 
-#       ifdef XMRIG_ALGO_CN_GPU
-        if (! (!rc || N > 1)) {
-            return verify(Algorithm::CN_GPU, test_output_gpu);
-        } else
-#       endif
         return rc;
     }
 
