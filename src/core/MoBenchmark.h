@@ -31,6 +31,7 @@ namespace xmrig {
 class Controller;
 class Miner;
 class Job;
+class Config;
 
 class MoBenchmark : public IJobResultListener {
 
@@ -95,6 +96,7 @@ class MoBenchmark : public IJobResultListener {
         void set_controller(std::shared_ptr<Controller> controller) { m_controller = controller.get(); }
 
         void start_perf(); // start benchmarks
+        bool compare_perf(Config *previousConfig);
         void flush_perf();
 
         bool isNewBenchRun() const { return m_isNewBenchRun; }
