@@ -1775,7 +1775,7 @@ static void keccak_core(sph_keccak_context *kc, const void *data, size_t len,
     for (j = 0; j < 50; j += 2)                                                \
       UNINTERLEAVE(kc->u.narrow[j], kc->u.narrow[j + 1]);                      \
     for (j = 0; j < d; j += 4)                                                 \
-      flex_enc32le_aligned(u.tmp + j, kc->u.narrow[j >> 2]);                    \
+      sph_enc32le_aligned(u.tmp + j, kc->u.narrow[j >> 2]);                    \
     memcpy(dst, u.tmp, d);                                                     \
     keccak_init(kc, (unsigned)d << 3);                                         \
   }
