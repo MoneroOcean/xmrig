@@ -35,6 +35,8 @@
 #define be64enc libcperciva_be64enc
 #define le32dec libcperciva_le32dec
 #define le32enc libcperciva_le32enc
+#define le64dec libcperciva_le64dec
+#define le64enc libcperciva_le64enc
 
 static inline uint32_t
 be32dec(const void * pp)
@@ -89,6 +91,32 @@ le32enc(void * pp, uint32_t x)
 	p[1] = (x >> 8) & 0xff;
 	p[2] = (x >> 16) & 0xff;
 	p[3] = (x >> 24) & 0xff;
+}
+
+static inline uint64_t
+le64dec(const void * pp)
+{
+	const uint8_t * p = (uint8_t const *)pp;
+
+	return ((uint64_t)(p[0]) + ((uint64_t)(p[1]) << 8) +
+	    ((uint64_t)(p[2]) << 16) + ((uint64_t)(p[3]) << 24) +
+	    ((uint64_t)(p[4]) << 32) + ((uint64_t)(p[5]) << 40) +
+	    ((uint64_t)(p[6]) << 48) + ((uint64_t)(p[7]) << 56));
+}
+
+static inline void
+le64enc(void * pp, uint64_t x)
+{
+	uint8_t * p = (uint8_t *)pp;
+
+	p[0] = x & 0xff;
+	p[1] = (x >> 8) & 0xff;
+	p[2] = (x >> 16) & 0xff;
+	p[3] = (x >> 24) & 0xff;
+	p[4] = (x >> 32) & 0xff;
+	p[5] = (x >> 40) & 0xff;
+	p[6] = (x >> 48) & 0xff;
+	p[7] = (x >> 56) & 0xff;
 }
 
 #endif /* !_SYSENDIAN_H_ */

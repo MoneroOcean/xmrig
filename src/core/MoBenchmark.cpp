@@ -256,8 +256,3 @@ uint64_t MoBenchmark::get_now() const { // get current time in ms
 }
 
 } // namespace xmrig
-
-const char *xmrig::bm_tag()
-{
-    return Tags::benchmark();
-}

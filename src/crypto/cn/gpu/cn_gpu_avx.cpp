@@ -22,22 +22,24 @@
  *   along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#include "crypto/cn/CnAlgo.h"
-
-
 #ifdef __GNUC__
 #   include <x86intrin.h>
 #else
 #   include <intrin.h>
 #   define __restrict__ __restrict
 #endif
+
+
+#include "crypto/cn/CnAlgo.h"
+
+
 #ifndef _mm256_bslli_epi128
-	#define _mm256_bslli_epi128(a, count) _mm256_slli_si256((a), (count))
+#    define _mm256_bslli_epi128(a, count) _mm256_slli_si256((a), (count))
 #endif
 #ifndef _mm256_bsrli_epi128
-	#define _mm256_bsrli_epi128(a, count) _mm256_srli_si256((a), (count))
+#    define _mm256_bsrli_epi128(a, count) _mm256_srli_si256((a), (count))
 #endif
+
 
 inline void prep_dv_avx(__m256i* idx, __m256i& v, __m256& n01)
 {
@@ -45,12 +47,14 @@ inline void prep_dv_avx(__m256i* idx, __m256i& v, __m256& n01)
     n01 = _mm256_cvtepi32_ps(v);
 }
 
+
 inline __m256 fma_break(const __m256& x)
 {
     // Break the dependency chain by setting the exp to ?????01
     __m256 xx = _mm256_and_ps(_mm256_castsi256_ps(_mm256_set1_epi32(0xFEFFFFFF)), x);
     return _mm256_or_ps(_mm256_castsi256_ps(_mm256_set1_epi32(0x00800000)), xx);
 }
+
 
 // 14
 inline void sub_round(const __m256& n0, const __m256& n1, const __m256& n2, const __m256& n3, const __m256& rnd_c, __m256& n, __m256& d, __m256& c)
@@ -138,19 +142,18 @@ template<size_t ITER, uint32_t MASK>
 void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
 {
     uint32_t s = reinterpret_cast<const uint32_t*>(spad)[0] >> 8;
-    __m256i* idx0 = scratchpad_ptr<MASK>(lpad, s, 0);
-    __m256i* idx2 = scratchpad_ptr<MASK>(lpad, s, 2);
+    __m256i* gdx0 = scratchpad_ptr<MASK>(lpad, s, 0);
+    __m256i* gdx2 = scratchpad_ptr<MASK>(lpad, s, 2);
     __m256 sum0 = _mm256_setzero_ps();
 
-    for(size_t i = 0; i < ITER; i++)
-    {
+    for (size_t i = 0; i < ITER; i++) {
         __m256i v01, v23;
         __m256 suma, sumb, sum1;
         __m256 rc = sum0;
 
         __m256 n01, n23;
-        prep_dv_avx(idx0, v01, n01);
-        prep_dv_avx(idx2, v23, n23);
+        prep_dv_avx(gdx0, v01, n01);
+        prep_dv_avx(gdx2, v23, n23);
 
         __m256i out, out2;
         __m256 n10, n22, n33;
@@ -163,7 +166,7 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
         double_compute_wrap<1>(n01, n22, n33, n10, 1.2812500f, 1.3984375f, rc, suma, out);
         double_compute_wrap<2>(n01, n33, n10, n22, 1.3593750f, 1.3828125f, rc, sumb, out);
         double_compute_wrap<3>(n01, n33, n22, n10, 1.3671875f, 1.3046875f, rc, sumb, out);
-        _mm256_store_si256(idx0, _mm256_xor_si256(v01, out));
+        _mm256_store_si256(gdx0, _mm256_xor_si256(v01, out));
         sum0 = _mm256_add_ps(suma, sumb);
         out2 = out;
 
@@ -177,7 +180,7 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
         double_compute_wrap<1>(n23, n02, n30, n11, 1.2734375f, 1.3515625f, rc, suma, out);
         double_compute_wrap<2>(n23, n30, n11, n02, 1.2578125f, 1.3359375f, rc, sumb, out);
         double_compute_wrap<3>(n23, n30, n02, n11, 1.2890625f, 1.4609375f, rc, sumb, out);
-        _mm256_store_si256(idx2, _mm256_xor_si256(v23, out));
+        _mm256_store_si256(gdx2, _mm256_xor_si256(v23, out));
         sum1 = _mm256_add_ps(suma, sumb);
 
         out2 = _mm256_xor_si256(out2, out);
@@ -203,8 +206,8 @@ void cn_gpu_inner_avx(const uint8_t* spad, uint8_t* lpad)
         sum = _mm_div_ps(sum, _mm_set1_ps(64.0f));
         sum0 = _mm256_insertf128_ps(_mm256_castps128_ps256(sum), sum, 1);
         uint32_t n = _mm_cvtsi128_si32(v0);
-        idx0 = scratchpad_ptr<MASK>(lpad, n, 0);
-        idx2 = scratchpad_ptr<MASK>(lpad, n, 2);
+        gdx0 = scratchpad_ptr<MASK>(lpad, n, 0);
+        gdx2 = scratchpad_ptr<MASK>(lpad, n, 2);
     }
 }
 
