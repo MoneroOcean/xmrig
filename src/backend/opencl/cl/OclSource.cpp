@@ -28,6 +28,12 @@
 #include "base/crypto/Algorithm.h"
 
 
+#ifdef XMRIG_ALGO_CN_GPU
+// MoneroOcean: CN-GPU has a separate embedded OpenCL kernel source.
+#   include "backend/opencl/cl/cn/cryptonight_gpu_cl.h"
+// End MoneroOcean
+#endif
+
 #ifdef XMRIG_ALGO_RANDOMX
 #   include "backend/opencl/cl/rx/randomx_cl.h"
 #endif
@@ -40,6 +46,14 @@
 
 const char *xmrig::OclSource::get(const Algorithm &algorithm)
 {
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: serve CN-GPU jobs from the fork-specific kernel source.
+    if (algorithm == Algorithm::CN_GPU) {
+        return cryptonight_gpu_cl;
+    }
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     if (algorithm.family() == Algorithm::RANDOM_X) {
         return randomx_cl;

@@ -40,16 +40,28 @@ class IJsonReader;
 class BaseConfig : public IConfig
 {
 public:
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: persisted controls for algo-perf benchmarking and switch throttling.
+    static const char *kAlgoMinTime;
+    static const char *kAlgoPerf;
+#   endif
     static const char *kApi;
     static const char *kApiId;
     static const char *kApiWorkerId;
     static const char *kAutosave;
     static const char *kBackground;
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    static const char *kBenchAlgoTime;
+#   endif
     static const char *kColors;
     static const char *kDryRun;
     static const char *kHttp;
     static const char *kLogFile;
     static const char *kPrintTime;
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    static const char *kRebenchAlgo;
+    // End MoneroOcean
+#   endif
     static const char *kSyslog;
     static const char *kTitle;
     static const char *kUserAgent;
@@ -74,6 +86,14 @@ public:
     inline const String &apiWorkerId() const                { return m_apiWorkerId; }
     inline const Title &title() const                       { return m_title; }
     inline uint32_t printTime() const                       { return m_printTime; }
+
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: expose algo-perf controls to mining and network runtime.
+    inline bool isRebenchAlgo() const                       { return m_rebenchAlgo; }
+    inline int  benchAlgoTime() const                       { return m_benchAlgoTime; }
+    inline int  algoMinTime() const                         { return m_algoMinTime; }
+    // End MoneroOcean
+#   endif
 
 #   ifdef XMRIG_FEATURE_TLS
     inline const TlsConfig &tls() const                     { return m_tls; }
@@ -104,6 +124,14 @@ protected:
     String m_userAgent;
     Title m_title;
     uint32_t m_printTime    = 60;
+
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: defaults for offline benchmark timing and pool switch throttle.
+    bool m_rebenchAlgo   = false;
+    int  m_benchAlgoTime = 10;
+    int  m_algoMinTime   = 0;
+    // End MoneroOcean
+#   endif
 
 #   ifdef XMRIG_FEATURE_TLS
     TlsConfig m_tls;

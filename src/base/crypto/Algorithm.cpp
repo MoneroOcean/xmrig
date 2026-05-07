@@ -74,6 +74,12 @@ const char *Algorithm::kCN_PICO_TLO     = "cn-pico/tlo";
 const char *Algorithm::kCN_UPX2         = "cn/upx2";
 #endif
 
+#ifdef XMRIG_ALGO_CN_GPU
+// MoneroOcean: fork-only CryptoNight-GPU name negotiated by MoneroOcean pools.
+const char *Algorithm::kCN_GPU          = "cn/gpu";
+// End MoneroOcean
+#endif
+
 #ifdef XMRIG_ALGO_RANDOMX
 const char *Algorithm::kRX              = "rx";
 const char *Algorithm::kRX_0            = "rx/0";
@@ -100,6 +106,16 @@ const char *Algorithm::kKAWPOW_RVN      = "kawpow";
 #ifdef XMRIG_ALGO_GHOSTRIDER
 const char* Algorithm::kGHOSTRIDER      = "ghostrider";
 const char* Algorithm::kGHOSTRIDER_RTM  = "ghostrider";
+// MoneroOcean: Flex/KCN is dispatched through the GhostRider family plumbing.
+const char* Algorithm::kFLEX            = "flex";
+const char* Algorithm::kFLEX_KCN        = "flex";
+// End MoneroOcean
+#endif
+
+#ifdef XMRIG_ALGO_RANDOMX
+// MoneroOcean: Panthera/Scala uses RandomX registration with a separate name.
+const char *Algorithm::kRX_XLA          = "panthera";
+// End MoneroOcean
 #endif
 
 
@@ -142,6 +158,12 @@ static const std::map<uint32_t, const char *> kAlgorithmNames = {
     ALGO_NAME(CN_UPX2),
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: register fork-only CN-GPU algorithm id.
+    ALGO_NAME(CN_GPU),
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     ALGO_NAME(RX_0),
     ALGO_NAME(RX_V2),
@@ -162,8 +184,17 @@ static const std::map<uint32_t, const char *> kAlgorithmNames = {
     ALGO_NAME(KAWPOW_RVN),
 #   endif
 
+#   ifdef XMRIG_ALGO_RANDOMX
+    // MoneroOcean: register Panthera/Scala id.
+    ALGO_NAME(RX_XLA),
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     ALGO_NAME(GHOSTRIDER_RTM),
+    // MoneroOcean: register Flex/KCN as a GhostRider-family runtime variant.
+    ALGO_NAME(FLEX_KCN),
+    // End MoneroOcean
 #   endif
 };
 
@@ -249,6 +280,13 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
                                     ALGO_ALIAS(CN_UPX2,         "cryptonight-upx/2"),
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: accept pool and legacy names for CN-GPU.
+    ALGO_ALIAS_AUTO(CN_GPU),        ALGO_ALIAS(CN_GPU,          "cryptonight/gpu"),
+                                    ALGO_ALIAS(CN_GPU,          "cryptonight_gpu"),
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     ALGO_ALIAS_AUTO(RX_0),          ALGO_ALIAS(RX_0,            "randomx/0"),
                                     ALGO_ALIAS(RX_0,            "randomx/test"),
@@ -267,11 +305,12 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
                                     ALGO_ALIAS(RX_SFX,          "randomsfx"),
     ALGO_ALIAS_AUTO(RX_YADA),       ALGO_ALIAS(RX_YADA,         "randomx/yada"),
                                     ALGO_ALIAS(RX_YADA,         "randomyada"),
+    // End MoneroOcean
 #   endif
 
 #   ifdef XMRIG_ALGO_ARGON2
     ALGO_ALIAS_AUTO(AR2_CHUKWA),    ALGO_ALIAS(AR2_CHUKWA,      "chukwa"),
-    ALGO_ALIAS_AUTO(AR2_CHUKWA_V2), ALGO_ALIAS(AR2_CHUKWA,      "chukwav2"),
+    ALGO_ALIAS_AUTO(AR2_CHUKWA_V2), ALGO_ALIAS(AR2_CHUKWA_V2,   "chukwav2"),
     ALGO_ALIAS_AUTO(AR2_WRKZ),      ALGO_ALIAS(AR2_WRKZ,        "argon2/wrkz"),
 #   endif
 
@@ -279,9 +318,19 @@ static const std::map<const char *, Algorithm::Id, aliasCompare> kAlgorithmAlias
     ALGO_ALIAS_AUTO(KAWPOW_RVN),    ALGO_ALIAS(KAWPOW_RVN,      "kawpow/rvn"),
 #   endif
 
+#   ifdef XMRIG_ALGO_RANDOMX
+    // MoneroOcean: accept Panthera pool alias.
+    ALGO_ALIAS_AUTO(RX_XLA),        ALGO_ALIAS(RX_XLA,          "Panthera"),
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     ALGO_ALIAS_AUTO(GHOSTRIDER_RTM), ALGO_ALIAS(GHOSTRIDER_RTM, "ghostrider/rtm"),
                                      ALGO_ALIAS(GHOSTRIDER_RTM, "gr"),
+    // MoneroOcean: Flex/KCN is announced by pools as flex or flex/kcn.
+    ALGO_ALIAS_AUTO(FLEX_KCN), ALGO_ALIAS(FLEX_KCN, "flex/kcn"),
+                               ALGO_ALIAS(FLEX_KCN, "flex"),
+    // End MoneroOcean
 #   endif
 };
 
@@ -354,10 +403,16 @@ std::vector<xmrig::Algorithm> xmrig::Algorithm::all(const std::function<bool(con
         CN_HEAVY_0, CN_HEAVY_TUBE, CN_HEAVY_XHV,
         CN_PICO_0, CN_PICO_TLO,
         CN_UPX2,
+        // MoneroOcean: expose fork algorithms in API/config ordering.
+        CN_GPU, RX_XLA,
+        // End MoneroOcean
         RX_0, RX_V2, RX_WOW, RX_ARQ, RX_GRAFT, RX_SFX, RX_YADA,
         AR2_CHUKWA, AR2_CHUKWA_V2, AR2_WRKZ,
         KAWPOW_RVN,
-        GHOSTRIDER_RTM
+        GHOSTRIDER_RTM,
+        // MoneroOcean: expose Flex/KCN in API/config ordering.
+        FLEX_KCN
+        // End MoneroOcean
     };
 
     Algorithms out;

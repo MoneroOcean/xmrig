@@ -40,7 +40,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
         add_definitions(-DHAVE_ROTR)
     endif()
 
-    if (WIN32)
+    # MoneroOcean: MSYS links like the Windows GNU toolchain.
+    if (WIN32 OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
         if (CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
         else()
@@ -51,6 +52,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
     else()
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
     endif()
+    # End MoneroOcean
 
     if (BUILD_STATIC)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
@@ -96,14 +98,18 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES Clang)
         endif()
     endif()
 
-    if ((WIN32 AND ARM_TARGET) OR BUILD_STATIC)
+    # MoneroOcean: keep MSYS ARM/static behavior aligned with Windows.
+    if (((WIN32 OR CMAKE_SYSTEM_NAME MATCHES "MSYS") AND ARM_TARGET) OR BUILD_STATIC)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
     endif()
+    # End MoneroOcean
 endif()
 
-if (NOT WIN32)
+# MoneroOcean: MSYS uses Windows cache-flush behavior, not POSIX builtin probing.
+if (NOT WIN32 AND NOT CMAKE_SYSTEM_NAME MATCHES "MSYS")
     check_symbol_exists("__builtin___clear_cache" "stdlib.h" HAVE_BUILTIN_CLEAR_CACHE)
     if (HAVE_BUILTIN_CLEAR_CACHE)
         add_definitions(-DHAVE_BUILTIN_CLEAR_CACHE)
     endif()
 endif()
+# End MoneroOcean

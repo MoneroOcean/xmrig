@@ -51,6 +51,11 @@ size_t inline generate<Algorithm::CN>(Threads<OclThreads> &threads, const std::v
 
     count += generate(Algorithm::kCN, threads, Algorithm::CN_1, devices);
     count += generate(Algorithm::kCN_2, threads, Algorithm::CN_2, devices);
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: generate OpenCL config entries for CN-GPU.
+    count += generate(Algorithm::kCN_GPU, threads, Algorithm::CN_GPU, devices);
+    // End MoneroOcean
+#   endif
 
     if (!threads.isExist(Algorithm::CN_0)) {
         threads.disable(Algorithm::CN_0);

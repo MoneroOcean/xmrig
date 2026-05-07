@@ -239,6 +239,12 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
 #   endif
 
     case IConfig::RetriesKey:       /* --retries */
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: numeric algo-perf CLI keys are stored in base config.
+    case IConfig::BenchAlgoTimeKey: /* --bench-algo-time */
+    case IConfig::AlgoMinTimeKey:   /* --algo-min-time */
+    // End MoneroOcean
+#   endif
     case IConfig::RetryPauseKey:    /* --retry-pause */
     case IConfig::PrintTimeKey:     /* --print-time */
     case IConfig::HttpPort:         /* --http-port */
@@ -253,10 +259,20 @@ void xmrig::BaseTransform::transform(rapidjson::Document &doc, int key, const ch
     case IConfig::SyslogKey:      /* --syslog */
     case IConfig::KeepAliveKey:   /* --keepalive */
     case IConfig::NicehashKey:    /* --nicehash */
+#   ifdef XMRIG_FEATURE_TLS
     case IConfig::TlsKey:         /* --tls */
+#   endif
     case IConfig::DryRunKey:      /* --dry-run */
+#   ifdef XMRIG_FEATURE_HTTP
     case IConfig::HttpEnabledKey: /* --http-enabled */
     case IConfig::DaemonKey:      /* --daemon */
+#   endif
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: boolean algo-perf CLI key is stored in base config.
+    case IConfig::RebenchAlgoKey: /* --rebench-algo */
+    // End MoneroOcean
+#   endif
+    case IConfig::PauseOnBatteryKey: /* --pause-on-battery */
     case IConfig::SubmitToOriginKey: /* --submit-to-origin */
     case IConfig::VerboseKey:     /* --verbose */
     case IConfig::DnsIPv4Key:     /* --ipv4 */
@@ -321,6 +337,13 @@ void xmrig::BaseTransform::transformBoolean(rapidjson::Document &doc, int key, b
     case IConfig::NoTitleKey: /* --no-title */
         return set(doc, BaseConfig::kTitle, enable);
 
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: map --rebench-algo into the persisted benchmark config.
+    case IConfig::RebenchAlgoKey: /* --rebench-algo */
+        return set(doc, BaseConfig::kRebenchAlgo, enable);
+    // End MoneroOcean
+#   endif
+
     case IConfig::DnsIPv4Key: /* --ipv4 */
         return set(doc, DnsConfig::kField, DnsConfig::kIPv, 4);
 
@@ -367,6 +390,16 @@ void xmrig::BaseTransform::transformUint64(rapidjson::Document &doc, int key, ui
 
     case IConfig::DaemonZMQPortKey:  /* --daemon-zmq-port */
         return add(doc, Pools::kPools, Pool::kDaemonZMQPort, arg);
+#   endif
+
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: map benchmark timing flags into the persisted benchmark config.
+    case IConfig::BenchAlgoTimeKey: /* --bench-algo-time */
+        return set(doc, BaseConfig::kBenchAlgoTime, arg);
+
+    case IConfig::AlgoMinTimeKey:   /* --algo-min-time */
+        return set(doc, BaseConfig::kAlgoMinTime, arg);
+    // End MoneroOcean
 #   endif
 
     default:

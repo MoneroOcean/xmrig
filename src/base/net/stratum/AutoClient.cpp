@@ -19,6 +19,9 @@
 #include "base/net/stratum/AutoClient.h"
 #include "3rdparty/rapidjson/document.h"
 #include "base/io/json/Json.h"
+// MoneroOcean: submit routing needs the result algorithm, not just the current client mode.
+#include "net/JobResult.h"
+// End MoneroOcean
 
 
 xmrig::AutoClient::AutoClient(int id, const char *agent, IClientListener *listener) :
@@ -77,19 +80,29 @@ bool xmrig::AutoClient::parseLogin(const rapidjson::Value &result, int *code)
 
 int64_t xmrig::AutoClient::submit(const JobResult &result)
 {
+    // MoneroOcean: only fork ETH mode uses Ethereum submit framing; default jobs stay on plain stratum.
     if (m_mode == DEFAULT_MODE) {
         return Client::submit(result); // NOLINT(bugprone-parent-virtual-call)
     }
 
+    if (result.algorithm.family() != Algorithm::KAWPOW && result.algorithm.family() != Algorithm::GHOSTRIDER) {
+        return Client::submit(result); // NOLINT(bugprone-parent-virtual-call)
+    }
+
+    // End MoneroOcean
     return EthStratumClient::submit(result);
 }
 
 
 void xmrig::AutoClient::parseNotification(const char *method, const rapidjson::Value &params, const rapidjson::Value &error)
 {
-    if (m_mode == DEFAULT_MODE) {
+    // MoneroOcean: pools can switch between plain stratum jobs and Ethereum-style jobs.
+    if (strcmp(method, "job") == 0) {
+        m_mode = DEFAULT_MODE;
         return Client::parseNotification(method, params, error); // NOLINT(bugprone-parent-virtual-call)
     }
 
+    m_mode = ETH_MODE;
+    // End MoneroOcean
     return EthStratumClient::parseNotification(method, params, error);
 }

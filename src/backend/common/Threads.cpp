@@ -128,6 +128,10 @@ xmrig::String xmrig::Threads<T>::profileName(const Algorithm &algorithm, bool st
         }
     }
 
+    // MoneroOcean: Panthera/DefyX can reuse the standard rx CPU profile.
+    if (std::is_same<T, CpuThreads>::value && (name == "defyx" || name == "panthera") && has("rx")) return "rx";
+    // End MoneroOcean
+
     if (has(kAsterisk)) {
         return kAsterisk;
     }

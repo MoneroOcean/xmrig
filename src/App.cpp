@@ -84,6 +84,27 @@ int xmrig::App::exec()
         return 0;
     }
 
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: run offline algo-perf before connecting to a pool when config needs it.
+    const std::vector<Pool>& pools = m_controller->config()->pools().data();
+    if (pools.size() != 1 || pools[0].mode() != Pool::MODE_BENCHMARK) {
+        m_controller->pre_start();
+        m_controller->config()->benchmark().set_controller(m_controller);
+
+        if (m_controller->config()->benchmark().isNewBenchRun() || m_controller->config()->isRebenchAlgo()) {
+            if (m_controller->config()->isShouldSave()) {
+                m_controller->config()->save();
+            }
+            if (m_controller->config()->isRebenchAlgo()) {
+                m_controller->config()->benchmark().flush_perf();
+            }
+            m_controller->config()->benchmark().start_perf();
+        } else {
+            m_controller->start();
+        }
+    } else
+    // End MoneroOcean
+#   endif
     m_controller->start();
 
     rc = uv_run(uv_default_loop(), UV_RUN_DEFAULT);

@@ -52,6 +52,13 @@ static const option options[] = {
     { "keepalive",             0, nullptr, IConfig::KeepAliveKey          },
     { "log-file",              1, nullptr, IConfig::LogFileKey            },
     { "nicehash",              0, nullptr, IConfig::NicehashKey           },
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: CLI controls for algo-perf benchmark and switch throttling.
+    { "rebench-algo",          0, nullptr, IConfig::RebenchAlgoKey        },
+    { "bench-algo-time",       1, nullptr, IConfig::BenchAlgoTimeKey      },
+    { "algo-min-time",         1, nullptr, IConfig::AlgoMinTimeKey        },
+    // End MoneroOcean
+#   endif
     { "no-color",              0, nullptr, IConfig::ColorKey              },
     { "no-huge-pages",         0, nullptr, IConfig::HugePagesKey          },
     { "no-hugepages",          0, nullptr, IConfig::HugePagesKey          },

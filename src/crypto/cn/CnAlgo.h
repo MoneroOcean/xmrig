@@ -88,6 +88,13 @@ public:
             return CN_ITER / 32;
 #       endif
 
+#       ifdef XMRIG_ALGO_CN_GPU
+        // MoneroOcean: CN-GPU uses Ryo consensus iteration parameters.
+        case Algorithm::CN_GPU:
+            return 0xC000;
+        // End MoneroOcean
+#       endif
+
         default:
             break;
         }
@@ -107,6 +114,14 @@ public:
         if (algo == Algorithm::CN_UPX2) {
             return 0x1FFF0;
         }
+#       endif
+
+#       ifdef XMRIG_ALGO_CN_GPU
+        // MoneroOcean: CN-GPU uses the Ryo scratchpad mask.
+        if (algo == Algorithm::CN_GPU) {
+            return 0x1FFFC0;
+        }
+        // End MoneroOcean
 #       endif
 
 #       ifdef XMRIG_ALGO_GHOSTRIDER
@@ -142,10 +157,14 @@ template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_PICO_0>::iterations() 
 template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_PICO_TLO>::iterations() const     { return CN_ITER / 8; }
 template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_CCX>::iterations() const          { return CN_ITER / 2; }
 template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_UPX2>::iterations() const         { return CN_ITER / 32; }
+// MoneroOcean: CN-GPU compile-time parameters for CPU fallback hashing.
+template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_GPU>::iterations() const          { return 0xC000; }
 
 
 template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_PICO_0>::mask() const             { return 0x1FFF0; }
 template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_UPX2>::mask() const               { return 0x1FFF0; }
+template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_GPU>::mask() const                { return 0x1FFFC0; }
+// End MoneroOcean
 
 #ifdef XMRIG_ALGO_GHOSTRIDER
 template<> constexpr inline uint32_t CnAlgo<Algorithm::CN_GR_0>::iterations() const         { return CN_ITER / 4; }

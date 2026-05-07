@@ -260,7 +260,9 @@ xmrig::CpuThreads xmrig::HwlocCpuInfo::allThreads(const Algorithm &algorithm, ui
     CpuThreads threads;
     threads.reserve(m_threads);
 
-    const uint32_t intensity = (algorithm.family() == Algorithm::GHOSTRIDER) ? 8 : 0;
+    // MoneroOcean: Flex/KCN is GhostRider family but remains single-hash intensity.
+    const uint32_t intensity = (algorithm.id() == Algorithm::GHOSTRIDER_RTM) ? 8 : 0;
+    // End MoneroOcean
 
     for (const int32_t pu : m_units) {
         threads.add(pu, intensity);
@@ -359,6 +361,14 @@ void xmrig::HwlocCpuInfo::processTopLevelCache(hwloc_obj_t cache, const Algorith
         intensity = 2;
     }
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: CN-GPU CPU fallback can use each PU independently.
+    if (algorithm == Algorithm::CN_GPU) {
+        cacheHashes = PUs;
+    }
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     if ((vendor() == VENDOR_INTEL) && (algorithm.family() == Algorithm::RANDOM_X) && L3_exclusive && (PUs < cores.size() * 2)) {
         // Use all L3+L2 on latest Intel CPUs with P-cores, E-cores and exclusive L3 cache
@@ -367,6 +377,10 @@ void xmrig::HwlocCpuInfo::processTopLevelCache(hwloc_obj_t cache, const Algorith
     if (extra == 0 && algorithm.l2() > 0) {
         cacheHashes = std::min<size_t>(std::max<size_t>(L2 / algorithm.l2(), cores.size()), cacheHashes);
     }
+    // MoneroOcean: Panthera/Scala profile is limited to physical core count.
+    if (algorithm == Algorithm::RX_XLA) cacheHashes = cores.size();
+    // End MoneroOcean
+
 #   endif
 
     if (limit > 0) {

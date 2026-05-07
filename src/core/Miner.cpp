@@ -335,9 +335,11 @@ public:
         avg_hashrate_buf[0] = '\0';
 
 #       ifdef XMRIG_ALGO_GHOSTRIDER
-        if (algorithm.family() == Algorithm::GHOSTRIDER) {
+        // MoneroOcean: Flex/KCN is GhostRider family but should not use GhostRider avg scaling.
+        if (algorithm.id() == Algorithm::GHOSTRIDER_RTM) {
             snprintf(avg_hashrate_buf, sizeof(avg_hashrate_buf), " avg " CYAN_BOLD("%s %s"), Hashrate::format({ true, avg_hashrate * scale }, num + 16 * 4, 16), h);
         }
+        // End MoneroOcean
 #       endif
 
         LOG_INFO("%s " WHITE_BOLD("speed") " 10s/60s/15m " CYAN_BOLD("%s") CYAN(" %s %s ") CYAN_BOLD("%s") " max " CYAN_BOLD("%s %s") "%s",
@@ -603,9 +605,11 @@ void xmrig::Miner::setJob(const Job &job, bool donate)
 #   endif
 
 #   ifdef XMRIG_ALGO_GHOSTRIDER
-    if (job.algorithm().family() == Algorithm::GHOSTRIDER) {
+    // MoneroOcean: Flex/KCN is GhostRider family but does not need GhostRider helper state.
+    if (job.algorithm().id() == Algorithm::GHOSTRIDER_RTM) {
         d_ptr->initGhostRider();
     }
+    // End MoneroOcean
 #   endif
 
     mutex.unlock();

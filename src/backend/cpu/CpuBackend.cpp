@@ -262,7 +262,9 @@ bool xmrig::CpuBackend::isEnabled() const
 
 bool xmrig::CpuBackend::isEnabled(const Algorithm &algorithm) const
 {
-    return !d_ptr->controller->config()->cpu().threads().get(algorithm).isEmpty();
+    // MoneroOcean: algo switching can ask about invalid algorithms before profile lookup.
+    return algorithm.isValid() && !d_ptr->controller->config()->cpu().threads().get(algorithm).isEmpty();
+    // End MoneroOcean
 }
 
 

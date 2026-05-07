@@ -44,6 +44,11 @@ public:
     ~Controller() override;
 
     int init() override;
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: benchmark mode initializes the miner before connecting pools.
+    void pre_start();
+    // End MoneroOcean
+#   endif
     void start() override;
     void stop() override;
 

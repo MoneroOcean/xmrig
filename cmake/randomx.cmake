@@ -1,7 +1,8 @@
 if (WITH_RANDOMX)
     include(CheckSymbolExists)
 
-    if (WIN32)
+    # MoneroOcean: MSYS uses Windows aligned allocation handling.
+    if (WIN32 OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
         check_symbol_exists(_aligned_malloc "stdlib.h" HAVE_ALIGNED_MALLOC)
         if (HAVE_ALIGNED_MALLOC)
             add_compile_definitions(HAVE_ALIGNED_MALLOC)
@@ -12,6 +13,7 @@ if (WITH_RANDOMX)
             add_compile_definitions(HAVE_POSIX_MEMALIGN)
         endif()
     endif()
+    # End MoneroOcean
 
     add_definitions(/DXMRIG_ALGO_RANDOMX)
     set(WITH_ARGON2 ON)
@@ -54,6 +56,13 @@ if (WITH_RANDOMX)
         src/crypto/rx/RxDataset.cpp
         src/crypto/rx/RxQueue.cpp
         src/crypto/rx/RxVm.cpp
+        # MoneroOcean: Panthera/Scala RandomX configuration adds yespower/K12 helpers.
+        src/crypto/randomx/panthera/sha256.c
+        src/crypto/randomx/panthera/KangarooTwelve.c
+        src/crypto/randomx/panthera/KeccakP-1600-reference.c
+        src/crypto/randomx/panthera/KeccakSpongeWidth1600.c
+        src/crypto/randomx/panthera/yespower-opt.c
+        # End MoneroOcean
     )
 
     if (WITH_ASM AND CMAKE_C_COMPILER_ID MATCHES MSVC)

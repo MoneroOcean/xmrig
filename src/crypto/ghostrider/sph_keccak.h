@@ -40,9 +40,8 @@
 extern "C" {
 #endif
 
-// Taken from keccak-gate.h
-extern int hard_coded_eb;
-
+// MoneroOcean: hard_coded_eb is internal to sph_keccak.c in this fork.
+// End MoneroOcean
 #include "sph_types.h"
 #include <stddef.h>
 

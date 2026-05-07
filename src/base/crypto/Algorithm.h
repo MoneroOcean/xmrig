@@ -65,6 +65,8 @@ public:
         CN_PICO_0       = 0x63120200,   // "cn-pico"          CryptoNight-Pico
         CN_PICO_TLO     = 0x63120274,   // "cn-pico/tlo"      CryptoNight-Pico (TLO)
         CN_UPX2         = 0x63110200,   // "cn/upx2"          Uplexa (UPX2)
+        // MoneroOcean: fork runtime algorithms negotiated by MoneroOcean pools.
+        CN_GPU          = 0x63150300,   // "cn/gpu"           CryptoNight-GPU (Ryo).
         CN_GR_0         = 0x63130100,   // "cn/dark"          GhostRider
         CN_GR_1         = 0x63130101,   // "cn/dark-lite"     GhostRider
         CN_GR_2         = 0x63150102,   // "cn/fast"          GhostRider
@@ -72,6 +74,7 @@ public:
         CN_GR_4         = 0x63120104,   // "cn/turtle"        GhostRider
         CN_GR_5         = 0x63120105,   // "cn/turtle-lite"   GhostRider
         GHOSTRIDER_RTM  = 0x6c150000,   // "ghostrider"       GhostRider
+        FLEX_KCN        = 0x6c150001,   // "flex"             Flex
         RX_0            = 0x72151200,   // "rx/0"             RandomX (reference configuration).
         RX_V2           = 0x72151202,   // "rx/2"             RandomX (Monero v2).
         RX_WOW          = 0x72141177,   // "rx/wow"           RandomWOW (Wownero).
@@ -83,6 +86,9 @@ public:
         AR2_CHUKWA_V2   = 0x61140000,   // "argon2/chukwav2"  Argon2id (Chukwa v2).
         AR2_WRKZ        = 0x61120000,   // "argon2/wrkz"      Argon2id (WRKZ)
         KAWPOW_RVN      = 0x6b0f0000,   // "kawpow/rvn"       KawPow (RVN)
+
+        RX_XLA          = 0x721211ff,   // "panthera"         Panthera (Scala2).
+        // End MoneroOcean
     };
 
     enum Family : uint32_t {
@@ -137,6 +143,10 @@ public:
     static const char *kCN_UPX2;
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    static const char *kCN_GPU;
+#   endif
+
 #   ifdef XMRIG_ALGO_RANDOMX
     static const char *kRX;
     static const char *kRX_0;
@@ -160,9 +170,15 @@ public:
     static const char *kKAWPOW_RVN;
 #   endif
 
+#   ifdef XMRIG_ALGO_RANDOMX
+    static const char *kRX_XLA;
+#   endif
+
 #   ifdef XMRIG_ALGO_GHOSTRIDER
     static const char* kGHOSTRIDER;
     static const char* kGHOSTRIDER_RTM;
+    static const char* kFLEX;
+    static const char* kFLEX_KCN;
 #   endif
 
     inline Algorithm() = default;
@@ -185,7 +201,7 @@ public:
     inline size_t l2() const                                { return l2(m_id); }
     inline uint32_t family() const                          { return family(m_id); }
     inline uint32_t minIntensity() const                    { return ((m_id == GHOSTRIDER_RTM) ? 8 : 1); };
-    inline uint32_t maxIntensity() const                    { return isCN() ? 5 : ((m_id == GHOSTRIDER_RTM) ? 8 : 1); };
+    inline uint32_t maxIntensity() const                    { return (m_id == CN_GPU) ? 1 : (isCN() ? 5 : ((m_id == GHOSTRIDER_RTM) ? 8 : 1)); };
 
     inline size_t l3() const                                { return l3(m_id); }
 

@@ -199,6 +199,15 @@ static inline const std::string &usage()
     u += "      --no-dmi                  disable DMI/SMBIOS reader\n";
 #   endif
 
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: expose fork algo-perf benchmark controls in --help output.
+    u += "\nMoneroOcean Benchmark (algo-perf):\n";
+    u += "      --rebench-algo            run algo-perf benchmark (default if config contains no algo-perf)\n";
+    u += "      --bench-algo-time=N       run algo-perf benchmark this many seconds per algo (default: 10)\n";
+    u += "      --algo-min-time=N         when mining, avoid switching more often than every N seconds (default: 0/disabled)\n";
+    // End MoneroOcean
+#   endif
+
     return u;
 }
 

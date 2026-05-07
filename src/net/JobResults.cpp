@@ -133,7 +133,9 @@ static void getResults(JobBundle &bundle, std::vector<JobResult> &results, uint3
         for (uint32_t nonce : bundle.nonces) {
             *bundle.job.nonce() = nonce;
 
-            randomx_calculate_hash(vm, bundle.job.blob(), bundle.job.size(), hash);
+            // MoneroOcean: RandomX hashing needs the active algorithm for fork variants.
+            randomx_calculate_hash(vm, bundle.job.blob(), bundle.job.size(), hash, algorithm);
+            // End MoneroOcean
 
             checkHash(bundle, results, nonce, hash, errors);
         }
@@ -317,7 +319,9 @@ void xmrig::JobResults::done(const Job &job)
 
 void xmrig::JobResults::setListener(IJobResultListener *listener, bool hwAES)
 {
-    assert(handler == nullptr);
+    // MoneroOcean: algo benchmark/runtime reinitialization can replace the result handler.
+    if (handler) delete handler;
+    // End MoneroOcean
 
     handler = new JobResultsPrivate(listener, hwAES);
 }

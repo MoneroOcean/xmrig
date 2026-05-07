@@ -58,10 +58,17 @@ public:
         AV_MAX
     };
 
+    // MoneroOcean: Flex/KCN chooses from three final hashes instead of standard CN's four.
+    enum class Finalizer {
+        Standard,
+        Flex
+    };
+    // End MoneroOcean
+
     CnHash();
     virtual ~CnHash();
 
-    static cn_hash_fun fn(const Algorithm &algorithm, AlgoVariant av, Assembly::Id assembly);
+    static cn_hash_fun fn(const Algorithm &algorithm, AlgoVariant av, Assembly::Id assembly, Finalizer finalizer = Finalizer::Standard);
 
 private:
     struct cn_hash_fun_array {
@@ -69,6 +76,9 @@ private:
     };
 
     std::map<Algorithm, cn_hash_fun_array*> m_map;
+    // MoneroOcean: Flex uses the same CN stages with a fork-specific finalizer table.
+    std::map<Algorithm, cn_hash_fun_array*> m_flexMap;
+    // End MoneroOcean
 };
 
 

@@ -202,6 +202,14 @@ bool xmrig::Config::isShouldSave() const
     }
 #   endif
 
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: save refreshed algo-perf data after benchmark runs.
+    if (m_benchmark.isNewBenchRun()) {
+        return true;
+    }
+    // End MoneroOcean
+#   endif
+
     return (m_upgrade || cpu().isShouldSave());
 }
 
@@ -237,6 +245,12 @@ bool xmrig::Config::read(const IJsonReader &reader, const char *fileName)
 
 #   if defined(XMRIG_FEATURE_NVML) || defined (XMRIG_FEATURE_ADL)
     d_ptr->healthPrintTime = reader.getUint(kHealthPrintTime, d_ptr->healthPrintTime);
+#   endif
+
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: load persisted per-algorithm performance hints.
+    m_benchmark.read(reader.getValue(kAlgoPerf));
+    // End MoneroOcean
 #   endif
 
 #   ifdef XMRIG_FEATURE_DMI
@@ -303,6 +317,16 @@ void xmrig::Config::getJSON(rapidjson::Document &doc) const
     doc.AddMember(StringRef(kUserAgent),                m_userAgent.toJSON(), allocator);
     doc.AddMember(StringRef(kVerbose),                  Log::verbose(), allocator);
     doc.AddMember(StringRef(kWatch),                    m_watch, allocator);
+
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: persist benchmark controls and algo-perf data.
+    doc.AddMember(StringRef(kRebenchAlgo),              isRebenchAlgo(), allocator);
+    doc.AddMember(StringRef(kBenchAlgoTime),            benchAlgoTime(), allocator);
+    doc.AddMember(StringRef(kAlgoMinTime),              algoMinTime(), allocator);
+    doc.AddMember(StringRef(kAlgoPerf),                 m_benchmark.toJSON(doc), allocator);
+    // End MoneroOcean
+#   endif
+
     doc.AddMember(StringRef(kPauseOnBattery),           isPauseOnBattery(), allocator);
     doc.AddMember(StringRef(kPauseOnActive),            (d_ptr->idleTime == 0U || d_ptr->idleTime == kIdleTime) ? Value(isPauseOnActive()) : Value(d_ptr->idleTime), allocator);
 }

@@ -49,6 +49,14 @@
         m_map[algo]->data[AV_PENTA_SOFT][Assembly::NONE]  = cryptonight_penta_hash<algo,  true>;     \
     } while (0)
 
+// MoneroOcean: Flex registers only single-hash CN stages with the Flex finalizer.
+#define ADD_FN_FLEX(algo) do {                                                                                              \
+        m_flexMap[algo] = new cn_hash_fun_array{};                                                                          \
+        m_flexMap[algo]->data[AV_SINGLE][Assembly::NONE]      = cryptonight_single_hash<algo, false, 0, Finalizer::Flex>;   \
+        m_flexMap[algo]->data[AV_SINGLE_SOFT][Assembly::NONE] = cryptonight_single_hash<algo, true,  0, Finalizer::Flex>;   \
+    } while (0)
+// End MoneroOcean
+
 
 bool cn_sse41_enabled = false;
 bool cn_vaes_enabled = false;
@@ -356,6 +364,14 @@ xmrig::CnHash::CnHash()
     ADD_FN_ASM(Algorithm::CN_UPX2);
 #   endif
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: CN-GPU has a single-hash CPU fallback path used by self-tests.
+    m_map[Algorithm::CN_GPU] = new cn_hash_fun_array{};
+    m_map[Algorithm::CN_GPU]->data[AV_SINGLE][Assembly::NONE]      = cryptonight_single_hash_gpu<Algorithm::CN_GPU, false>;
+    m_map[Algorithm::CN_GPU]->data[AV_SINGLE_SOFT][Assembly::NONE] = cryptonight_single_hash_gpu<Algorithm::CN_GPU, true>;
+    // End MoneroOcean
+#   endif
+
 #   ifdef XMRIG_ALGO_ARGON2
     m_map[Algorithm::AR2_CHUKWA] = new cn_hash_fun_array{};
     m_map[Algorithm::AR2_CHUKWA]->data[AV_SINGLE][Assembly::NONE]         = argon2::single_hash<Algorithm::AR2_CHUKWA>;
@@ -371,12 +387,20 @@ xmrig::CnHash::CnHash()
 #   endif
 
 #   ifdef XMRIG_ALGO_GHOSTRIDER
+    // MoneroOcean: Flex reuses GhostRider CN stages, but needs its own final hash selection.
     ADD_FN(Algorithm::CN_GR_0);
     ADD_FN(Algorithm::CN_GR_1);
     ADD_FN(Algorithm::CN_GR_2);
     ADD_FN(Algorithm::CN_GR_3);
     ADD_FN(Algorithm::CN_GR_4);
     ADD_FN(Algorithm::CN_GR_5);
+    ADD_FN_FLEX(Algorithm::CN_GR_0);
+    ADD_FN_FLEX(Algorithm::CN_GR_1);
+    ADD_FN_FLEX(Algorithm::CN_GR_2);
+    ADD_FN_FLEX(Algorithm::CN_GR_3);
+    ADD_FN_FLEX(Algorithm::CN_GR_4);
+    ADD_FN_FLEX(Algorithm::CN_GR_5);
+    // End MoneroOcean
 #   endif
 
 #   ifdef XMRIG_FEATURE_ASM
@@ -388,21 +412,26 @@ xmrig::CnHash::CnHash()
 xmrig::CnHash::~CnHash()
 {
     for (auto const& x : m_map) {
-      delete m_map[x.first];
+        delete x.second;
+    }
+
+    for (auto const& x : m_flexMap) {
+        delete x.second;
     }
 }
 
 
-xmrig::cn_hash_fun xmrig::CnHash::fn(const Algorithm &algorithm, AlgoVariant av, Assembly::Id assembly)
+xmrig::cn_hash_fun xmrig::CnHash::fn(const Algorithm &algorithm, AlgoVariant av, Assembly::Id assembly, Finalizer finalizer)
 {
-    assert(cnHash.m_map.count(algorithm));
-
     if (!algorithm.isValid()) {
         return nullptr;
     }
 
-    const auto it = cnHash.m_map.find(algorithm);
-    if (it == cnHash.m_map.end()) {
+    // MoneroOcean: Flex/KCN explicitly opts into the alternate finalizer map.
+    const auto &map = finalizer == Finalizer::Flex ? cnHash.m_flexMap : cnHash.m_map;
+    // End MoneroOcean
+    const auto it = map.find(algorithm);
+    if (it == map.end()) {
         return nullptr;
     }
 
@@ -412,7 +441,7 @@ xmrig::cn_hash_fun xmrig::CnHash::fn(const Algorithm &algorithm, AlgoVariant av,
     const uint32_t model = Cpu::info()->model();
     const bool is_vermeer = (arch == ICpuInfo::ARCH_ZEN3) && (model == 0x21);
     const bool is_raphael = (arch == ICpuInfo::ARCH_ZEN4) && (model == 0x61);
-    if ((av == AV_SINGLE) && (assembly != Assembly::NONE) && (is_vermeer || is_raphael)) {
+    if (finalizer == Finalizer::Standard && (av == AV_SINGLE) && (assembly != Assembly::NONE) && (is_vermeer || is_raphael)) {
         switch (algorithm.id()) {
         case Algorithm::CN_HEAVY_0:
             return cryptonight_single_hash<Algorithm::CN_HEAVY_0, false, 3>;

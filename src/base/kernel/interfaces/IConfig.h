@@ -94,6 +94,14 @@ public:
         NicehashKey          = 1006,
         PrintTimeKey         = 1007,
 
+#       ifdef XMRIG_FEATURE_MO_BENCHMARK
+        // MoneroOcean: CLI keys for algo-perf benchmark and switch throttling.
+        RebenchAlgoKey       = 10001,
+        BenchAlgoTimeKey     = 10002,
+        AlgoMinTimeKey       = 10003,
+        // End MoneroOcean
+#       endif
+
         // xmrig cpu
         CPUKey               = 1024,
         AVKey                = 'v',

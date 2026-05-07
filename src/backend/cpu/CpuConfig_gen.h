@@ -48,6 +48,12 @@ size_t inline generate<Algorithm::CN>(Threads<CpuThreads> &threads, uint32_t lim
     size_t count = 0;
 
     count += generate(Algorithm::kCN, threads, Algorithm::CN_1, limit);
+    count += generate(Algorithm::kCN_2, threads, Algorithm::CN_2, limit);
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: generate CPU fallback threads for CN-GPU.
+    count += generate(Algorithm::kCN_GPU, threads, Algorithm::CN_GPU, limit);
+    // End MoneroOcean
+#   endif
 
     if (!threads.isExist(Algorithm::CN_0)) {
         threads.disable(Algorithm::CN_0);
@@ -126,6 +132,12 @@ size_t inline generate<Algorithm::RANDOM_X>(Threads<CpuThreads> &threads, uint32
         count += threads.move(Algorithm::kRX_WOW, std::move(wow));
     }
 
+    // MoneroOcean: Panthera/Scala uses its own generated CPU profile.
+    if (!threads.isExist(Algorithm::RX_XLA)) {
+        count += generate(Algorithm::kRX_XLA, threads, Algorithm::RX_XLA, limit);
+    }
+    // End MoneroOcean
+
     count += generate(Algorithm::kRX, threads, Algorithm::RX_0, limit);
 
     return count;
@@ -146,7 +158,13 @@ size_t inline generate<Algorithm::ARGON2>(Threads<CpuThreads> &threads, uint32_t
 template<>
 size_t inline generate<Algorithm::GHOSTRIDER>(Threads<CpuThreads>& threads, uint32_t limit)
 {
-    return generate(Algorithm::kGHOSTRIDER, threads, Algorithm::GHOSTRIDER_RTM, limit);
+    // MoneroOcean: Flex/KCN uses GhostRider family generation with its own profile.
+    size_t count = 0;
+    count += threads.move(Algorithm::kGHOSTRIDER, std::move(Cpu::info()->threads(Algorithm::GHOSTRIDER_RTM, limit)));
+    count += threads.move(Algorithm::kFLEX, std::move(Cpu::info()->threads(Algorithm::FLEX_KCN, limit)));
+    // End MoneroOcean
+
+    return count;
 }
 #endif
 

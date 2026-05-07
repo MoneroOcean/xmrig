@@ -39,7 +39,9 @@ extern "C" {
 #endif
 
 // Taken from keccak-gate.c
-int hard_coded_eb = 1;
+// MoneroOcean: internal linkage avoids exporting this GhostRider helper state.
+static const int hard_coded_eb = 1;
+// End MoneroOcean
 
 /*
  * Parameters:

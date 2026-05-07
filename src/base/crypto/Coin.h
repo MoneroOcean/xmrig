@@ -34,13 +34,15 @@ public:
         INVALID,
         MONERO,
         SUMO,
-        ARQMA,
+        ARQ,
         GRAFT,
         RAVEN,
         WOWNERO,
+        // MoneroOcean: extra pool coin ids that reuse existing RandomX variants.
         ZEPHYR,
         TOWNFORGE,
         YADA,
+        // End MoneroOcean
         MAX
     };
 

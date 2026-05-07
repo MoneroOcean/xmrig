@@ -1,4 +1,5 @@
-if (WIN32)
+# MoneroOcean: treat MSYS builds as Windows for runtime source selection.
+if (WIN32 OR CMAKE_SYSTEM_NAME MATCHES "MSYS")
     set(XMRIG_OS_WIN ON)
 elseif (APPLE)
     set(XMRIG_OS_APPLE ON)
@@ -23,6 +24,7 @@ else()
         set(XMRIG_OS_HAIKU ON)
     endif()
 endif()
+# End MoneroOcean
 
 if (XMRIG_OS_WIN)
     add_definitions(-DWIN32 -DXMRIG_OS_WIN)

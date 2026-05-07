@@ -30,11 +30,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined _MSC_VER || defined XMRIG_ARM || defined XMRIG_RISCV
+// MoneroOcean: Intel compiler rejects the ms_abi attribute on this path.
+#if defined _MSC_VER || defined XMRIG_ARM || defined XMRIG_RISCV || defined __INTEL_COMPILER
 #   define ABI_ATTRIBUTE
 #else
 #   define ABI_ATTRIBUTE __attribute__((ms_abi))
 #endif
+// End MoneroOcean
 
 
 struct cryptonight_ctx;

@@ -61,12 +61,23 @@ int xmrig::Controller::init()
     return 0;
 }
 
+#ifdef XMRIG_FEATURE_MO_BENCHMARK
+// MoneroOcean: benchmark mode needs the miner object before the normal network start path.
+void xmrig::Controller::pre_start()
+{
+    m_miner = std::make_shared<Miner>(this);
+}
+// End MoneroOcean
+#endif
+
 
 void xmrig::Controller::start()
 {
     Base::start();
 
-    m_miner = std::make_shared<Miner>(this);
+    // MoneroOcean: pre_start can already allocate the miner for benchmark runs.
+    if (m_miner == nullptr) m_miner = std::make_shared<Miner>(this);
+    // End MoneroOcean
 
     network()->connect();
 }

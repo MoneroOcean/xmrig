@@ -58,6 +58,12 @@ extern bool ocl_generic_kawpow_generator(const OclDevice& device, const Algorith
 extern bool ocl_vega_cn_generator(const OclDevice &device, const Algorithm &algorithm, OclThreads &threads);
 extern bool ocl_generic_cn_generator(const OclDevice &device, const Algorithm &algorithm, OclThreads &threads);
 
+#ifdef XMRIG_ALGO_CN_GPU
+// MoneroOcean: generator for CN-GPU Ryo OpenCL thread profiles.
+extern bool ocl_generic_cn_gpu_generator(const OclDevice &device, const Algorithm &algorithm, OclThreads &threads);
+// End MoneroOcean
+#endif
+
 
 static ocl_gen_config_fun generators[] = {
 #   ifdef XMRIG_ALGO_RANDOMX
@@ -65,6 +71,11 @@ static ocl_gen_config_fun generators[] = {
 #   endif
 #   ifdef XMRIG_ALGO_KAWPOW
     ocl_generic_kawpow_generator,
+#   endif
+#   ifdef XMRIG_ALGO_CN_GPU
+    // MoneroOcean: CN-GPU needs its own Ryo thread fields before generic CN matches.
+    ocl_generic_cn_gpu_generator,
+    // End MoneroOcean
 #   endif
     ocl_vega_cn_generator,
     ocl_generic_cn_generator

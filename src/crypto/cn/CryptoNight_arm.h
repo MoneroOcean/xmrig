@@ -66,8 +66,15 @@ static inline void do_skein_hash(const uint8_t *input, size_t len, uint8_t *outp
     xmr_skein(input, output);
 }
 
+// MoneroOcean: Flex/KCN replaces the fourth standard CN final hash with Flex Skein.
+static inline void do_flex_skein_hash(const uint8_t* input, size_t len, uint8_t* output) {
+    int r = skein_hash(512, input, 8 * len, (uint8_t*)output);
+    assert(SKEIN_SUCCESS == r);
+}
 
 void (* const extra_hashes[4])(const uint8_t *, size_t, uint8_t *) = {do_blake_hash, do_groestl_hash, do_jh_hash, do_skein_hash};
+void (* const extra_hashes_flex[3])(const uint8_t *, size_t, uint8_t *) = {do_blake_hash, do_groestl_hash, do_flex_skein_hash};
+// End MoneroOcean
 
 
 // This will shift and xor tmp1 into itself as 4 32-bit vals such as
@@ -168,6 +175,26 @@ inline void mix_and_propagate(__m128i& x0, __m128i& x1, __m128i& x2, __m128i& x3
 namespace xmrig {
 
 
+// MoneroOcean: finalizer selection is explicit so Flex/KCN does not depend on block height.
+template<CnHash::Finalizer FINALIZER>
+static inline void cryptonight_final_hash(uint8_t *state, uint8_t *output);
+
+
+template<>
+inline void cryptonight_final_hash<CnHash::Finalizer::Standard>(uint8_t *state, uint8_t *output)
+{
+    extra_hashes[state[0] & 3](state, 200, output);
+}
+
+
+template<>
+inline void cryptonight_final_hash<CnHash::Finalizer::Flex>(uint8_t *state, uint8_t *output)
+{
+    extra_hashes_flex[state[0] % 3](state, 200, output);
+}
+// End MoneroOcean
+
+
 template<Algorithm::Id ALGO, bool SOFT_AES>
 static inline void cn_explode_scratchpad(const __m128i *input, __m128i *output)
 {
@@ -233,7 +260,11 @@ static inline void cn_implode_scratchpad(const __m128i *input, __m128i *output)
 {
     constexpr CnAlgo<ALGO> props;
 
+#   ifdef XMRIG_ALGO_CN_GPU
+    constexpr bool IS_HEAVY = props.isHeavy() || ALGO == Algorithm::CN_GPU;
+#   else
     constexpr bool IS_HEAVY = props.isHeavy();
+#   endif
 
     __m128i xout0, xout1, xout2, xout3, xout4, xout5, xout6, xout7;
     __m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
@@ -397,7 +428,7 @@ static inline void cryptonight_conceal_tweak(__m128i& cx, __m128& conc_var)
 }
 
 
-template<Algorithm::Id ALGO, bool SOFT_AES, int interleave>
+template<Algorithm::Id ALGO, bool SOFT_AES, int interleave, CnHash::Finalizer FINALIZER = CnHash::Finalizer::Standard>
 inline void cryptonight_single_hash(const uint8_t *__restrict__ input, size_t size, uint8_t *__restrict__ output, cryptonight_ctx **__restrict__ ctx, uint64_t height)
 {
     constexpr CnAlgo<ALGO> props;
@@ -542,8 +573,70 @@ inline void cryptonight_single_hash(const uint8_t *__restrict__ input, size_t si
 
     cn_implode_scratchpad<ALGO, SOFT_AES>(reinterpret_cast<const __m128i *>(ctx[0]->memory), reinterpret_cast<__m128i *>(ctx[0]->state));
     keccakf(h0, 24);
-    extra_hashes[ctx[0]->state[0] & 3](ctx[0]->state, 200, output);
+    cryptonight_final_hash<FINALIZER>(ctx[0]->state, output);
 }
+
+
+} /* namespace xmrig */
+
+
+#ifdef XMRIG_ALGO_CN_GPU
+// MoneroOcean: CN-GPU CPU fallback path used by hash tests and CPU self-test.
+template<size_t ITER, uint32_t MASK>
+void cn_gpu_inner_arm(const uint8_t *spad, uint8_t *lpad);
+
+
+namespace xmrig {
+
+
+template<size_t MEM>
+void cn_explode_scratchpad_gpu(const uint8_t *input, uint8_t *output)
+{
+    constexpr size_t hash_size = 200; // 25x8 bytes
+    alignas(16) uint64_t hash[25];
+
+    for (uint64_t i = 0; i < MEM / 512; i++) {
+        memcpy(hash, input, hash_size);
+        hash[0] ^= i;
+
+        xmrig::keccakf(hash, 24);
+        memcpy(output, hash, 160);
+        output += 160;
+
+        xmrig::keccakf(hash, 24);
+        memcpy(output, hash, 176);
+        output += 176;
+
+        xmrig::keccakf(hash, 24);
+        memcpy(output, hash, 176);
+        output += 176;
+    }
+}
+
+
+template<xmrig::Algorithm::Id ALGO, bool SOFT_AES>
+inline void cryptonight_single_hash_gpu(const uint8_t *__restrict__ input, size_t size, uint8_t *__restrict__ output, cryptonight_ctx **__restrict__ ctx, uint64_t height)
+{
+    constexpr CnAlgo<ALGO> props;
+
+    keccak(input, size, ctx[0]->state);
+    cn_explode_scratchpad_gpu<props.memory()>(ctx[0]->state, ctx[0]->memory);
+
+    fesetround(FE_TONEAREST);
+
+    cn_gpu_inner_arm<props.iterations(), props.mask()>(ctx[0]->state, ctx[0]->memory);
+
+    cn_implode_scratchpad<ALGO, SOFT_AES>(reinterpret_cast<const __m128i *>(ctx[0]->memory), reinterpret_cast<__m128i *>(ctx[0]->state));
+    keccakf(reinterpret_cast<uint64_t*>(ctx[0]->state), 24);
+    memcpy(output, ctx[0]->state, 32);
+}
+
+} /* namespace xmrig */
+// End MoneroOcean
+#endif
+
+
+namespace xmrig {
 
 
 template<Algorithm::Id ALGO, bool SOFT_AES>

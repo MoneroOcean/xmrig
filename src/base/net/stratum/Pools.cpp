@@ -147,6 +147,8 @@ void xmrig::Pools::load(const IJsonReader &reader)
         return;
     }
 
+    // MoneroOcean: first MoneroOcean pool disables the built-in donation path.
+    bool mo = false;
     for (const rapidjson::Value &value : pools.GetArray()) {
         if (!value.IsObject()) {
             continue;
@@ -154,10 +156,13 @@ void xmrig::Pools::load(const IJsonReader &reader)
 
         Pool pool(value);
         if (pool.isValid()) {
+            if (m_data.empty() && strstr(pool.host(), "moneroocean.stream")) mo = true;
             m_data.push_back(std::move(pool));
         }
     }
 
+    if (mo) m_donateLevel = 0; else
+    // End MoneroOcean
     setDonateLevel(reader.getInt(kDonateLevel, kDefaultDonateLevel));
     setProxyDonate(reader.getInt(kDonateOverProxy, PROXY_DONATE_AUTO));
     setRetries(reader.getInt(kRetries));

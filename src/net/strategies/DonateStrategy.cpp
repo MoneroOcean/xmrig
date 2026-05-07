@@ -43,10 +43,9 @@ namespace xmrig {
 static inline double randomf(double min, double max)                 { return (max - min) * (((static_cast<double>(rand())) / static_cast<double>(RAND_MAX))) + min; }
 static inline uint64_t random(uint64_t base, double min, double max) { return static_cast<uint64_t>(base * randomf(min, max)); }
 
-static const char *kDonateHost = "donate.v2.xmrig.com";
-#ifdef XMRIG_FEATURE_TLS
-static const char *kDonateHostTls = "donate.ssl.xmrig.com";
-#endif
+// MoneroOcean: route donation mining through the fork pool endpoint.
+static const char *kDonateHost = "xmrig.moneroocean.stream";
+// End MoneroOcean
 
 } // namespace xmrig
 
@@ -57,22 +56,21 @@ xmrig::DonateStrategy::DonateStrategy(Controller *controller, IStrategyListener 
     m_controller(controller),
     m_listener(listener)
 {
-    uint8_t hash[200];
-
-    const auto &user = controller->config()->pools().data().front().user();
-    keccak(reinterpret_cast<const uint8_t *>(user.data()), user.size(), hash);
-    Cvt::toHex(m_userId, sizeof(m_userId), hash, 32);
-
-#   if defined XMRIG_ALGO_KAWPOW || defined XMRIG_ALGO_GHOSTRIDER
+#   if defined(XMRIG_ALGO_KAWPOW) || defined(XMRIG_ALGO_GHOSTRIDER)
+    // MoneroOcean: donation jobs may be switched into Eth-style protocols by the pool.
     constexpr Pool::Mode mode = Pool::MODE_AUTO_ETH;
 #   else
     constexpr Pool::Mode mode = Pool::MODE_POOL;
 #   endif
+    static char donate_user[] = "89TxfrUmqJJcb1V124WsUzA78Xa3UYHt7Bg8RGMhXVeZYPN8cE5CZEk58Y1m23ZMLHN7wYeJ9da5n5MXharEjrm41hSnWHL";
+    // End MoneroOcean
 
 #   ifdef XMRIG_FEATURE_TLS
-    m_pools.emplace_back(kDonateHostTls, 443, m_userId, nullptr, nullptr, 0, true, true, mode);
+    // MoneroOcean: use fork donation ports and wallet.
+    m_pools.emplace_back(kDonateHost, 20001, donate_user, nullptr, nullptr, 0, true, true, mode);
 #   endif
-    m_pools.emplace_back(kDonateHost, 3333, m_userId, nullptr, nullptr, 0, true, false, mode);
+    m_pools.emplace_back(kDonateHost, 10001, donate_user, nullptr, nullptr, 0, true, false, mode);
+    // End MoneroOcean
 
     if (m_pools.size() > 1) {
         m_strategy = new FailoverStrategy(m_pools, 10, 2, this, true);

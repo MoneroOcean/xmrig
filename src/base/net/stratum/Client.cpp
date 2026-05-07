@@ -178,6 +178,10 @@ int64_t xmrig::Client::send(const rapidjson::Value &obj)
 
 int64_t xmrig::Client::submit(const JobResult &result)
 {
+    // MoneroOcean: offline benchmark jobs have no RPC id and should not submit.
+    if (m_rpcId.isNull()) return 0; // ignore leftout benchmark jobs
+    // End MoneroOcean
+
 #   ifndef XMRIG_PROXY_PROJECT
     if (result.clientId != m_rpcId || m_rpcId.isNull() || m_state != ConnectedState) {
         return -1;

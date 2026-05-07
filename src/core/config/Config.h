@@ -27,6 +27,11 @@
 #include "backend/cpu/CpuConfig.h"
 #include "base/kernel/config/BaseConfig.h"
 #include "base/tools/Object.h"
+#ifdef XMRIG_FEATURE_MO_BENCHMARK
+// MoneroOcean: Config owns the per-algorithm benchmark cache.
+#include "core/MoBenchmark.h"
+// End MoneroOcean
+#endif
 
 
 namespace xmrig {
@@ -100,8 +105,19 @@ public:
     bool read(const IJsonReader &reader, const char *fileName) override;
     void getJSON(rapidjson::Document &doc) const override;
 
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: runtime access to algo-perf benchmark data.
+    inline MoBenchmark &benchmark()           { return m_benchmark; }
+    // End MoneroOcean
+#   endif
+
 private:
     ConfigPrivate *d_ptr;
+#   ifdef XMRIG_FEATURE_MO_BENCHMARK
+    // MoneroOcean: persisted algo-perf benchmark data.
+    MoBenchmark m_benchmark;
+    // End MoneroOcean
+#   endif
 };
 
 

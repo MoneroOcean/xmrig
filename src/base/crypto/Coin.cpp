@@ -52,9 +52,11 @@ static const CoinInfo coinInfo[] = {
     { Algorithm::RX_GRAFT,        "GRFT",     "Graft",        120,    10000000000,    BLUE_BG_BOLD(   WHITE_BOLD_S " graft   ") },
     { Algorithm::KAWPOW_RVN,      "RVN",      "Ravencoin",    0,      0,              BLUE_BG_BOLD(   WHITE_BOLD_S " raven   ") },
     { Algorithm::RX_WOW,          "WOW",      "Wownero",      300,    100000000000,   MAGENTA_BG_BOLD(WHITE_BOLD_S " wownero ") },
+    // MoneroOcean: additional pool coin codes using existing RandomX variants.
     { Algorithm::RX_0,            "ZEPH",     "Zephyr",       120,    1000000000000,  BLUE_BG_BOLD(   WHITE_BOLD_S " zephyr  ") },
     { Algorithm::RX_0,            "Townforge","Townforge",    30,     100000000,      MAGENTA_BG_BOLD(WHITE_BOLD_S " townforge ") },
     { Algorithm::RX_YADA,         "YDA",      "YadaCoin",     120,    100000000,      BLUE_BG_BOLD(   WHITE_BOLD_S " yada    ") },
+    // End MoneroOcean
 };
 
 
@@ -64,7 +66,6 @@ static_assert(Coin::MAX == sizeof(coinInfo) / sizeof(coinInfo[0]), "size mismatc
 const char *Coin::kDisabled = "DISABLED_COIN";
 const char *Coin::kField    = "coin";
 const char *Coin::kUnknown  = "UNKNOWN_COIN";
-
 
 } /* namespace xmrig */
 

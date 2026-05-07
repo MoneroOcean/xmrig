@@ -97,6 +97,9 @@ private:
 #define WHITE_S             CSI "0;37m" // another name for LT.GRAY
 #define WHITE_BOLD_S        CSI "1;37m" // actually white
 
+// MoneroOcean: benchmark status tag uses the bright black background color.
+#define BRIGHT_BLACK_BG_S   CSI "100m" // somewhat MD.GRAY
+// End MoneroOcean
 #define RED_BG_BOLD_S       CSI "41;1m"
 #define GREEN_BG_BOLD_S     CSI "42;1m"
 #define YELLOW_BG_BOLD_S    CSI "43;1m"
@@ -125,6 +128,9 @@ private:
 #define WHITE(x)            WHITE_S x CLEAR
 #define WHITE_BOLD(x)       WHITE_BOLD_S x CLEAR
 
+// MoneroOcean: benchmark status tag uses the bright black background color.
+#define BRIGHT_BLACK_BG(x)  BRIGHT_BLACK_BG_S x CLEAR
+// End MoneroOcean
 #define RED_BG_BOLD(x)      RED_BG_BOLD_S x CLEAR
 #define GREEN_BG_BOLD(x)    GREEN_BG_BOLD_S x CLEAR
 #define YELLOW_BG_BOLD(x)   YELLOW_BG_BOLD_S x CLEAR
