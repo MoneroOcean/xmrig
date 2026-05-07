@@ -352,10 +352,10 @@ namespace randomx {
 		generateProgramPrologue(prog, pcfg);
 
 		if (RandomX_CurrentConfig.Tweak_V2_PREFETCH) {
-			emit(RandomX_CurrentConfig.codeReadDatasetV2Tweaked, RandomX_CurrentConfig.codeReadDatasetV2TweakedSize, code, codePos);
+			emit(codeReadDatasetV2, readDatasetV2Size, code, codePos);
 		}
 		else {
-			emit(RandomX_CurrentConfig.codeReadDatasetTweaked, RandomX_CurrentConfig.codeReadDatasetTweakedSize, code, codePos);
+			emit(codeReadDataset, readDatasetSize, code, codePos);
 		}
 
 		generateProgramEpilogue(prog, pcfg);
@@ -856,7 +856,7 @@ namespace randomx {
 	void JitCompilerX86::h_ISUB_R(const Instruction& instr) {
 		uint8_t* const p = code;
 		uint32_t pos = codePos;
-
+		
 		const uint32_t src = instr.src;
 		const uint32_t dst = instr.dst;
 
@@ -1056,7 +1056,7 @@ namespace randomx {
 	void JitCompilerX86::h_IMUL_RCP(const Instruction& instr) {
 		uint8_t* const p = code;
 		uint32_t pos = codePos;
-
+		
 		uint64_t divisor = instr.getImm32();
 		if (!isZeroOrPowerOf2(divisor)) {
 			const uint32_t dst = instr.dst;

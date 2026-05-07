@@ -231,14 +231,11 @@ xmrig::IClient *xmrig::Pool::createClient(int id, IClientListener *listener) con
         if ((f == Algorithm::KAWPOW) || (f == Algorithm::GHOSTRIDER) || (m_coin == Coin::RAVEN)) {
             client = new EthStratumClient(id, Platform::userAgent(), listener);
         }
-        else {
-            client = new AutoClient(id, Platform::userAgent(), listener);
-        }
-#else
+        else
+#       endif
         {
             client = new Client(id, Platform::userAgent(), listener);
         }
-#       endif
     }
 #   ifdef XMRIG_FEATURE_HTTP
     else if (m_mode == MODE_DAEMON) {

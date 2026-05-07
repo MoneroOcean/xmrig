@@ -335,7 +335,7 @@ public:
         avg_hashrate_buf[0] = '\0';
 
 #       ifdef XMRIG_ALGO_GHOSTRIDER
-        if (algorithm.id() == Algorithm::GHOSTRIDER_RTM) {
+        if (algorithm.family() == Algorithm::GHOSTRIDER) {
             snprintf(avg_hashrate_buf, sizeof(avg_hashrate_buf), " avg " CYAN_BOLD("%s %s"), Hashrate::format({ true, avg_hashrate * scale }, num + 16 * 4, 16), h);
         }
 #       endif
@@ -603,7 +603,7 @@ void xmrig::Miner::setJob(const Job &job, bool donate)
 #   endif
 
 #   ifdef XMRIG_ALGO_GHOSTRIDER
-    if (job.algorithm().id() == Algorithm::GHOSTRIDER_RTM) {
+    if (job.algorithm().family() == Algorithm::GHOSTRIDER) {
         d_ptr->initGhostRider();
     }
 #   endif

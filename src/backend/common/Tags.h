@@ -46,10 +46,6 @@ const char *ocl_tag();
 const char *cuda_tag();
 #endif
 
-#ifdef XMRIG_FEATURE_MO_BENCHMARK
-const char *bm_tag();
-#endif
-
 
 } // namespace xmrig
 
