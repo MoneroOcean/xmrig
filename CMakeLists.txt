@@ -259,7 +259,29 @@ if (WITH_DEBUG_LOG)
 endif()
 
 add_executable(${CMAKE_PROJECT_NAME} ${HEADERS} ${SOURCES} ${SOURCES_OS} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${TLS_SOURCES} ${XMRIG_ASM_SOURCES})
+if (WITH_OPENCL)
+    add_dependencies(${CMAKE_PROJECT_NAME} generate-opencl-sources)
+endif()
 target_link_libraries(${CMAKE_PROJECT_NAME} ${XMRIG_ASM_LIBRARY} ${OPENSSL_LIBRARIES} ${UV_LIBRARIES} ${EXTRA_LIBS} ${CPUID_LIB} ${ARGON2_LIBRARY} ${ETHASH_LIBRARY} ${GHOSTRIDER_LIBRARY})
+
+add_custom_target(check-hashes
+    COMMAND node ${CMAKE_SOURCE_DIR}/run_tests.js --safe --build-dir ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    USES_TERMINAL
+)
+
+add_custom_target(check-hashes-full
+    COMMAND node ${CMAKE_SOURCE_DIR}/run_tests.js --suite hash-full --build-dir ${CMAKE_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    USES_TERMINAL
+)
+
+add_custom_target(check-miner-integration
+    COMMAND node ${CMAKE_SOURCE_DIR}/run_tests.js --suite miner-integration --build-dir ${CMAKE_BINARY_DIR} --skip-build
+    DEPENDS ${CMAKE_PROJECT_NAME}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    USES_TERMINAL
+)
 
 if (WIN32)
     if (NOT ARM_TARGET)

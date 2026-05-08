@@ -1,0 +1,152 @@
+name: Test builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Ubuntu ${{ matrix.arch }} build and hash tests
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            git \
+            libhwloc-dev \
+            libssl-dev \
+            libuv1-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: Run safe test subset
+        run: node run_tests.js --safe --build-dir build
+
+      # Full local suite: node run_tests.js
+
+  macos:
+    name: macOS ${{ matrix.arch }} build and hash tests
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+            uname: arm64
+          - runner: macos-15-intel
+            arch: x64
+            uname: x86_64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Verify runner architecture
+        run: test "$(uname -m)" = "${{ matrix.uname }}"
+
+      - name: Install build dependencies
+        run: |
+          missing=()
+          for formula in autoconf automake cmake libtool libuv openssl@3; do
+            brew list --formula "$formula" >/dev/null 2>&1 || missing+=("$formula")
+          done
+          if ((${#missing[@]})); then
+            brew install "${missing[@]}"
+          fi
+
+      - name: Build static hwloc
+        run: |
+          HWLOC_VERSION=2.12.1
+          curl -fsSLO "https://download.open-mpi.org/release/hwloc/v2.12/hwloc-${HWLOC_VERSION}.tar.gz"
+          tar xzf "hwloc-${HWLOC_VERSION}.tar.gz"
+          cd "hwloc-${HWLOC_VERSION}"
+          ./configure --disable-shared --enable-static --disable-io --disable-libudev --disable-libxml2
+          make -j"$(sysctl -n hw.logicalcpu)"
+
+      - name: Configure
+        run: |
+          OPENSSL_ROOT="$(brew --prefix openssl@3)"
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT" \
+            -DHWLOC_INCLUDE_DIR="$PWD/hwloc-2.12.1/include" \
+            -DHWLOC_LIBRARY="$PWD/hwloc-2.12.1/hwloc/.libs/libhwloc.a"
+
+      - name: Build
+        run: cmake --build build --parallel "$(sysctl -n hw.logicalcpu)"
+
+      - name: Run safe test subset
+        run: node run_tests.js --safe --build-dir build
+
+      # Full local suite: node run_tests.js
+
+  windows:
+    name: Windows build and hash tests
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 60
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup MSYS2 UCRT64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          cache: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-nodejs
+
+      - name: Checkout XMRig deps
+        run: git clone --depth 1 https://github.com/xmrig/xmrig-deps.git
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DXMRIG_DEPS="$PWD/xmrig-deps/gcc/x64"
+
+      - name: Build
+        run: cmake --build build --parallel 2
+
+      - name: Run safe test subset
+        run: BUILD_PARALLEL=2 node run_tests.js --safe --build-dir build --cmake-generator Ninja

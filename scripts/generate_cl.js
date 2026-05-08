@@ -49,10 +49,6 @@ function rx()
         'randomx_constants_monero.h',
         'randomx_constants_wow.h',
         'randomx_constants_arqma.h',
-        // MoneroOcean: generated RandomX kernels include fork variant constants.
-        'randomx_constants_equilibria.h',
-        'randomx_constants_keva.h',
-        // End MoneroOcean
         'randomx_constants_graft.h',
         'aes.cl',
         'blake2b.cl',

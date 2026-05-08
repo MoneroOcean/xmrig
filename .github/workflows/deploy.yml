@@ -1,0 +1,349 @@
+name: Create release and build artifacts
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  windows:
+    name: Build Windows artifacts
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 75
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup MSYS2 UCRT64
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          cache: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-ucrt-x86_64-7zip
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-nodejs
+
+      - name: Checkout XMRig deps
+        run: git clone --depth 1 https://github.com/xmrig/xmrig-deps.git
+
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DXMRIG_DEPS="$PWD/xmrig-deps/gcc/x64"
+
+      - name: Build
+        run: cmake --build build --parallel 2
+
+      - name: Run safe test subset
+        run: BUILD_PARALLEL=2 node run_tests.js --safe --build-dir build --cmake-generator Ninja
+
+      - name: Package
+        run: |
+          mkdir -p package
+          cp build/xmrig.exe package/
+          cp src/config.json package/
+          cp bin/WinRing0/WinRing0x64.sys package/
+          (cd package && 7z a -tzip -mx=9 "../xmrig-${VERSION}-win64.zip" xmrig.exe config.json WinRing0x64.sys)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows
+          path: xmrig-${{ env.VERSION }}-win64.zip
+          retention-days: 7
+          if-no-files-found: error
+
+  ubuntu:
+    name: Build Ubuntu artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            cmake \
+            git \
+            libhwloc-dev \
+            libssl-dev \
+            libuv1-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: Run safe test subset
+        run: node run_tests.js --safe --build-dir build
+
+      # Full local suite: node run_tests.js
+
+      - name: Package
+        run: |
+          mkdir -p package
+          cp build/xmrig package/
+          cp src/config.json package/
+          tar -C package -czf "xmrig-${VERSION}-lin64.tar.gz" xmrig config.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ubuntu
+          path: xmrig-${{ env.VERSION }}-lin64.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  macos:
+    name: Build macOS ${{ matrix.suffix }} artifacts
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            suffix: mac-arm64
+            uname: arm64
+          - runner: macos-15-intel
+            suffix: mac-intel
+            uname: x86_64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Verify runner architecture
+        run: test "$(uname -m)" = "${{ matrix.uname }}"
+
+      - name: Install build dependencies
+        run: |
+          missing=()
+          for formula in autoconf automake cmake libtool libuv openssl@3; do
+            brew list --formula "$formula" >/dev/null 2>&1 || missing+=("$formula")
+          done
+          if ((${#missing[@]})); then
+            brew install "${missing[@]}"
+          fi
+
+      - name: Build static hwloc
+        run: |
+          HWLOC_VERSION=2.12.1
+          curl -fsSLO "https://download.open-mpi.org/release/hwloc/v2.12/hwloc-${HWLOC_VERSION}.tar.gz"
+          tar xzf "hwloc-${HWLOC_VERSION}.tar.gz"
+          cd "hwloc-${HWLOC_VERSION}"
+          ./configure --disable-shared --enable-static --disable-io --disable-libudev --disable-libxml2
+          make -j"$(sysctl -n hw.logicalcpu)"
+
+      - name: Configure
+        run: |
+          OPENSSL_ROOT="$(brew --prefix openssl@3)"
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENSSL_ROOT_DIR="$OPENSSL_ROOT" \
+            -DHWLOC_INCLUDE_DIR="$PWD/hwloc-2.12.1/include" \
+            -DHWLOC_LIBRARY="$PWD/hwloc-2.12.1/hwloc/.libs/libhwloc.a"
+
+      - name: Build
+        run: cmake --build build --parallel "$(sysctl -n hw.logicalcpu)"
+
+      - name: Run safe test subset
+        run: node run_tests.js --safe --build-dir build
+
+      # Full local suite: node run_tests.js
+
+      - name: Package
+        run: |
+          mkdir -p package
+          cp build/xmrig package/
+          cp src/config.json package/
+          tar -C package -czf "xmrig-${VERSION}-${{ matrix.suffix }}.tar.gz" xmrig config.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.suffix }}
+          path: xmrig-${{ env.VERSION }}-${{ matrix.suffix }}.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  ubuntu-compat:
+    name: Build glibc 2.12 compatible artifacts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Prepare source archive
+        run: tar --exclude=.git -czf /tmp/xmrig-source.tar.gz .
+
+      - name: Run build inside manylinux2010
+        run: |
+          mkdir -p /tmp/xmrig-docker
+          cp /tmp/xmrig-source.tar.gz /tmp/xmrig-docker/source.tar.gz
+          cat >/tmp/xmrig-docker/build.sh <<'EOF'
+          set -eux
+
+          export PATH="/opt/rh/devtoolset-8/root/usr/bin:${PATH}"
+          export CC=gcc
+          export CXX=g++
+          JOBS="$(nproc)"
+
+          gcc --version
+          g++ --version
+          ldd --version | head -n 1
+          if ! command -v wget >/dev/null 2>&1; then
+            cat >/usr/local/bin/wget <<'EOS'
+          #!/bin/sh
+          if [ "$2" = "-O" ] && [ -n "$3" ]; then
+            exec curl -fsSL "$1" -o "$3"
+          fi
+          exec curl -fsSLO "$1"
+          EOS
+            chmod +x /usr/local/bin/wget
+          fi
+
+          curl -fsSL https://cmake.org/files/v3.16/cmake-3.16.9.tar.gz | tar -xzC /tmp
+          (cd /tmp/cmake-3.16.9 && ./bootstrap --parallel="${JOBS}" -- -DCMAKE_USE_OPENSSL=OFF && make -j"${JOBS}" && make install)
+
+          mkdir -p /tmp/xmrig
+          tar -xzf /tmp/xmrig-docker/source.tar.gz -C /tmp/xmrig
+          cd /tmp/xmrig
+          (cd scripts && ./build.uv.sh && ./build.hwloc1.sh && ./build.openssl.sh)
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DXMRIG_DEPS=scripts/deps
+          cmake --build build --parallel "${JOBS}"
+          cmake -S tests/hash -B build/hash-tests -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/hash-tests --target hash-tests --parallel "${JOBS}"
+          cmake --build build/hash-tests --target check-hashes --parallel "${JOBS}"
+
+          if readelf --version-info build/xmrig | grep -E 'Name: GLIBC_2\.(1[3-9]|[2-9][0-9])'; then
+            echo "compat binary requires a newer glibc than 2.12"
+            exit 1
+          fi
+
+          if readelf --version-info build/xmrig | grep -E 'Name: (GLIBCXX_|CXXABI_)'; then
+            echo "compat binary must not depend on dynamic libstdc++"
+            exit 1
+          fi
+
+          mkdir -p /tmp/package
+          cp build/xmrig /tmp/package/
+          cp src/config.json /tmp/package/
+          cp build/xmrig /tmp/xmrig-docker/xmrig-compat
+          cp build/hash-tests/hash-tests /tmp/xmrig-docker/hash-tests-compat
+          tar -C /tmp/package -czf "/tmp/xmrig-docker/xmrig-${VERSION}-lin64-compat.tar.gz" xmrig config.json
+          EOF
+          chmod +x /tmp/xmrig-docker/build.sh
+          docker run --rm \
+            -e VERSION="${VERSION}" \
+            -v /tmp/xmrig-docker:/tmp/xmrig-docker \
+            quay.io/pypa/manylinux2010_x86_64 \
+            /bin/bash /tmp/xmrig-docker/build.sh
+
+      - name: Run compat artifact test suite
+        run: node run_tests.js --safe --skip-build --hash-binary /tmp/xmrig-docker/hash-tests-compat --binary /tmp/xmrig-docker/xmrig-compat
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ubuntu-compat
+          path: /tmp/xmrig-docker/xmrig-${{ env.VERSION }}-lin64-compat.tar.gz
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    name: Create release and publish artifacts
+    runs-on: ubuntu-24.04
+    needs:
+      - windows
+      - ubuntu
+      - macos
+      - ubuntu-compat
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          fail_on_unmatched_files: true
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends unzip zip
+
+      - name: Update xmrig_setup repo
+        env:
+          SETUP_TOKEN: ${{ secrets.xmrig_setup_key }}
+        run: |
+          if [ -z "${SETUP_TOKEN}" ]; then
+            echo "xmrig_setup_key is not configured; skipping xmrig_setup update."
+            exit 0
+          fi
+
+          git clone "https://x-access-token:${SETUP_TOKEN}@github.com/MoneroOcean/xmrig_setup.git"
+          cd xmrig_setup
+          git config user.name MoneroOcean
+          git config user.email support@moneroocean.stream
+          cp "../dist/xmrig-${VERSION}-lin64-compat.tar.gz" xmrig.tar.gz
+          cp "../dist/xmrig-${VERSION}-win64.zip" xmrig.zip
+          unzip -o xmrig.zip
+          zip -u offline_miner_setup.zip xmrig.exe config.json WinRing0x64.sys
+          git add xmrig.tar.gz xmrig.zip offline_miner_setup.zip
+          git commit -m "xmrig ${VERSION} based release" || exit 0
+          git push
+
+      - name: Update hiveos repo
+        env:
+          SETUP_TOKEN: ${{ secrets.xmrig_setup_key }}
+        run: |
+          if [ -z "${SETUP_TOKEN}" ]; then
+            echo "xmrig_setup_key is not configured; skipping hiveos update."
+            exit 0
+          fi
+
+          git clone "https://x-access-token:${SETUP_TOKEN}@github.com/MoneroOcean/hiveos.git"
+          cd hiveos
+          git config user.name MoneroOcean
+          git config user.email support@moneroocean.stream
+          tar xf "../dist/xmrig-${VERSION}-lin64-compat.tar.gz"
+          mv xmrig mo_xmrig/xmrig
+          mv config.json mo_xmrig/config_global.json
+          VER="${VERSION//-/_}"
+          tar -zcvf "mo_xmrig-${VER}.tar.gz" mo_xmrig
+          git add "mo_xmrig-${VER}.tar.gz" mo_xmrig/xmrig mo_xmrig/config_global.json
+          git commit -m "xmrig ${VERSION} based release" || exit 0
+          git push

@@ -12,8 +12,8 @@ wget https://download.open-mpi.org/release/hwloc/v1.11/hwloc-${HWLOC_VERSION}.ta
 tar -xzf hwloc-${HWLOC_VERSION}.tar.gz
 
 cd hwloc-${HWLOC_VERSION}
-./configure --disable-shared --enable-static --disable-io --disable-libudev --disable-libxml2
-make -j$(nproc || sysctl -n hw.ncpu || sysctl -n hw.logicalcpu)
+./configure --disable-shared --enable-static --disable-libudev --disable-libxml2 --disable-cairo --disable-pci --disable-opencl --disable-cuda --disable-nvml --disable-libnuma
+make -C src -j$(nproc || sysctl -n hw.ncpu || sysctl -n hw.logicalcpu)
 cp -fr include ../../deps
 cp src/.libs/libhwloc.a ../../deps/lib
 cd ..

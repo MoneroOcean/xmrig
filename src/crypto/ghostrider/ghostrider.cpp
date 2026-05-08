@@ -44,9 +44,9 @@
 
 #include <thread>
 #include <atomic>
-#include <uv.h>
 
 #ifdef XMRIG_FEATURE_HWLOC
+#   include <uv.h>
 #   include "base/kernel/Platform.h"
 #   include <hwloc.h>
 

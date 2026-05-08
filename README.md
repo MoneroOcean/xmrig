@@ -24,6 +24,15 @@ The preferred way to configure the miner is the [JSON config file](https://xmrig
 * **[Wizard](https://xmrig.com/wizard)** helps you create initial configuration for the miner.
 * **[Workers](http://workers.xmrig.info)** helps manage your miners via HTTP API.
 
+## Hash tests
+Run the offline CPU hash suite without pool, API, or miner network dependencies:
+
+```bash
+./tests/hash/check.sh
+```
+
+The script builds the standalone hash-test binary and runs both the regular known-answer suite and the full RandomX mode checks.
+
 ## Donations
 * Default donation 1% (1 minute in 100 minutes) can be increased via option `donate-level` or disabled in source code.
 * XMR: `48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzKt52XU5xvqgzYnDK9URnRoJMk1j8nLwEVsaSWJ4fhdUyZijBGUicoD`

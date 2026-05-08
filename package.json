@@ -7,7 +7,8 @@
     "doc": "doc"
   },
   "scripts": {
-    "build": "node scripts/generate_cl.js"
+    "build": "node scripts/generate_cl.js",
+    "test": "node run_tests.js"
   },
   "repository": {
     "type": "git",

@@ -1,29 +1,28 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+about: Report a reproducible miner or algorithm issue
+title: '[Bug] '
+labels: bug
 assignees: ''
-
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+What happened, and which algorithm/backend was active when it happened?
 
 **To Reproduce**
-Steps to reproduce the behavior.
+Steps to reproduce the behavior, including the pool/job mode if relevant.
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+What did you expect to happen instead?
 
 **Required data**
- - XMRig version
-    - Either the exact link to a release you downloaded from https://github.com/xmrig/xmrig/releases
-    - Or the exact command lines that you used to build XMRig
- - Miner log as text or screenshot
- - Config file or command line (without wallets)
- - OS: [e.g. Windows]
- - For GPU related issues: information about GPUs and driver version.
+- MoneroOcean XMRig version or commit hash.
+- Exact command lines used to build XMRig, if built from source.
+- Miner log as text, including startup CPU/GPU feature detection and the failing job.
+- Config file or command line, with wallet addresses, tokens, and secrets redacted.
+- OS and architecture, for example `Ubuntu 24.04 x86_64` or `Windows 11 arm64`.
+- CPU model and enabled CPU features, if this is a CPU mining issue.
+- GPU model, driver version, and backend (`OpenCL` or `CUDA`), if this is a GPU issue.
 
 **Additional context**
-Add any other context about the problem here.
+Add any other context, recent config changes, or the last known working commit.

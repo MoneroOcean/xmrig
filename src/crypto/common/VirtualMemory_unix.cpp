@@ -45,6 +45,9 @@
 
 #ifdef XMRIG_OS_LINUX
 #   include "crypto/common/LinuxMemory.h"
+#   ifndef MADV_HUGEPAGE
+#       define MADV_HUGEPAGE 14
+#   endif
 #endif
 
 
