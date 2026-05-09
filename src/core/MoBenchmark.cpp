@@ -79,6 +79,14 @@ void MoBenchmark::flush_perf() {
    for (const Algorithm::Id algo : Algorithm::all()) algo_perf[algo] = 0.0f;
 }
 
+bool MoBenchmark::compare_perf(Config *previousConfig) {
+   // returns equivalent of == comparison
+   for (const Algorithm::Id algo : Algorithm::all()) {
+       if (algo_perf[algo] != previousConfig->benchmark().algo_perf[algo]) return false;
+   }
+   return true;
+}
+
 void MoBenchmark::read(const rapidjson::Value &value)
 {
     flush_perf();
