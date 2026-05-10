@@ -62,13 +62,13 @@ jobs:
           cp build/xmrig.exe package/
           cp src/config.json package/
           cp bin/WinRing0/WinRing0x64.sys package/
-          (cd package && 7z a -tzip -mx=9 "../xmrig-${VERSION}-win64.zip" xmrig.exe config.json WinRing0x64.sys)
+          (cd package && 7z a -tzip -mx=9 "../xmrig-${VERSION}-win.zip" xmrig.exe config.json WinRing0x64.sys)
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: windows
-          path: xmrig-${{ env.VERSION }}-win64.zip
+          name: win
+          path: xmrig-${{ env.VERSION }}-win.zip
           retention-days: 7
           if-no-files-found: error
 
@@ -108,13 +108,13 @@ jobs:
           mkdir -p package
           cp build/xmrig package/
           cp src/config.json package/
-          tar -C package -czf "xmrig-${VERSION}-lin64.tar.gz" xmrig config.json
+          tar -C package -czf "xmrig-${VERSION}-lin.tar.gz" xmrig config.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ubuntu
-          path: xmrig-${{ env.VERSION }}-lin64.tar.gz
+          name: lin
+          path: xmrig-${{ env.VERSION }}-lin.tar.gz
           retention-days: 7
           if-no-files-found: error
 
@@ -128,7 +128,7 @@ jobs:
       matrix:
         include:
           - runner: macos-15
-            suffix: mac-arm64
+            suffix: mac
             uname: arm64
           - runner: macos-15-intel
             suffix: mac-intel
@@ -258,7 +258,7 @@ jobs:
           cp src/config.json /tmp/package/
           cp build/xmrig /tmp/xmrig-docker/xmrig-compat
           cp build/hash-tests/hash-tests /tmp/xmrig-docker/hash-tests-compat
-          tar -C /tmp/package -czf "/tmp/xmrig-docker/xmrig-${VERSION}-lin64-compat.tar.gz" xmrig config.json
+          tar -C /tmp/package -czf "/tmp/xmrig-docker/xmrig-${VERSION}-lin-compat.tar.gz" xmrig config.json
           EOF
           chmod +x /tmp/xmrig-docker/build.sh
           docker run --rm \
@@ -273,8 +273,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ubuntu-compat
-          path: /tmp/xmrig-docker/xmrig-${{ env.VERSION }}-lin64-compat.tar.gz
+          name: lin-compat
+          path: /tmp/xmrig-docker/xmrig-${{ env.VERSION }}-lin-compat.tar.gz
           retention-days: 7
           if-no-files-found: error
 
@@ -318,8 +318,8 @@ jobs:
           cd xmrig_setup
           git config user.name MoneroOcean
           git config user.email support@moneroocean.stream
-          cp "../dist/xmrig-${VERSION}-lin64-compat.tar.gz" xmrig.tar.gz
-          cp "../dist/xmrig-${VERSION}-win64.zip" xmrig.zip
+          cp "../dist/xmrig-${VERSION}-lin-compat.tar.gz" xmrig.tar.gz
+          cp "../dist/xmrig-${VERSION}-win.zip" xmrig.zip
           unzip -o xmrig.zip
           zip -u offline_miner_setup.zip xmrig.exe config.json WinRing0x64.sys
           git add xmrig.tar.gz xmrig.zip offline_miner_setup.zip
@@ -339,7 +339,7 @@ jobs:
           cd hiveos
           git config user.name MoneroOcean
           git config user.email support@moneroocean.stream
-          tar xf "../dist/xmrig-${VERSION}-lin64-compat.tar.gz"
+          tar xf "../dist/xmrig-${VERSION}-lin-compat.tar.gz"
           mv xmrig mo_xmrig/xmrig
           mv config.json mo_xmrig/config_global.json
           VER="${VERSION//-/_}"
