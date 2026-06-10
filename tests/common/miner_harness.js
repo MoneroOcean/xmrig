@@ -62,7 +62,7 @@ const ALGO_PERF = {
     "cn/ccx": 1,
     "cn/gpu": 1,
     "argon2/chukwav2": 1,
-    "kawpow": 1,
+    "kawpow1": 1,
     "ghostrider": 1,
     "flex": 1,
     "cn-heavy/xhv": 1,

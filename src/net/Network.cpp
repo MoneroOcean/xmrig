@@ -201,7 +201,12 @@ void xmrig::Network::onLogin(IStrategy *, IClient *client, rapidjson::Document &
     Value algo(kArrayType);
 
     for (const auto &a : algorithms) {
-        algo.PushBack(StringRef(a.name()), allocator);
+#       ifdef XMRIG_FEATURE_MO_BENCHMARK
+        const char *name = m_controller->config()->benchmark().poolAlgoName(a);
+#       else
+        const char *name = a.name();
+#       endif
+        algo.PushBack(StringRef(name), allocator);
     }
 
     params.AddMember("algo", algo, allocator);
@@ -211,7 +216,8 @@ void xmrig::Network::onLogin(IStrategy *, IClient *client, rapidjson::Document &
     Value algo_perf(kObjectType);
 
     for (const auto &a : algorithms) {
-        algo_perf.AddMember(StringRef(a.name()), m_controller->config()->benchmark().algo_perf[a.id()], allocator);
+        const char *name = m_controller->config()->benchmark().poolAlgoName(a);
+        algo_perf.AddMember(StringRef(name), m_controller->config()->benchmark().algo_perf[a.id()], allocator);
     }
 
     params.AddMember("algo-perf", algo_perf, allocator);

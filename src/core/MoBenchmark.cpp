@@ -30,10 +30,11 @@
 #include "net/Network.h"
 
 #include <chrono>
+#include <cstring>
 
 namespace xmrig {
 
-MoBenchmark::MoBenchmark() : m_controller(nullptr), m_isNewBenchRun(true) {}
+MoBenchmark::MoBenchmark() : m_controller(nullptr), m_isNewBenchRun(true), m_isRawKawPow(false) {}
 
 MoBenchmark::~MoBenchmark() {}
 
@@ -69,7 +70,7 @@ rapidjson::Value MoBenchmark::toJSON(rapidjson::Document &doc) const
 
     for (const Algorithm a : Algorithm::all()) {
         if (algo_perf[a.id()] == 0.0f) continue;
-        obj.AddMember(StringRef(a.name()), algo_perf[a.id()], allocator);
+        obj.AddMember(StringRef(poolAlgoName(a)), algo_perf[a.id()], allocator);
     }
 
     return obj;
@@ -77,6 +78,7 @@ rapidjson::Value MoBenchmark::toJSON(rapidjson::Document &doc) const
 
 void MoBenchmark::flush_perf() {
    for (const Algorithm::Id algo : Algorithm::all()) algo_perf[algo] = 0.0f;
+   m_isRawKawPow = false;
 }
 
 void MoBenchmark::read(const rapidjson::Value &value)
@@ -84,20 +86,27 @@ void MoBenchmark::read(const rapidjson::Value &value)
     flush_perf();
     if (value.IsObject()) {
         for (auto &member : value.GetObject()) {
-            const Algorithm algo(member.name.GetString());
+            const bool rawKawPow = strcmp(member.name.GetString(), "kawpow1") == 0;
+            const Algorithm algo(rawKawPow ? "kawpow" : member.name.GetString());
             if (!algo.isValid()) {
                 LOG_INFO("%s " BRIGHT_BLACK_BG(MAGENTA_BOLD_S " Ignoring wrong name for algo-perf[%s] "), Tags::benchmark(), member.name.GetString());
                 continue;
             }
-            if (member.value.IsDouble()) {
-                algo_perf[algo.id()] = member.value.GetDouble();
+            double perf = 0.0;
+            if (member.value.IsDouble()) perf = member.value.GetDouble();
+            else if (member.value.IsInt()) perf = member.value.GetInt();
+            else {
+                LOG_INFO("%s " BRIGHT_BLACK_BG(MAGENTA_BOLD_S " Ignoring wrong value for algo-perf[%s] "), Tags::benchmark(), member.name.GetString());
                 continue;
             }
-            if (member.value.IsInt()) {
-                algo_perf[algo.id()] = member.value.GetInt();
-                continue;
+#           ifdef XMRIG_ALGO_KAWPOW
+            if (algo.id() == Algorithm::KAWPOW_RVN) {
+                if (!rawKawPow && m_isRawKawPow) continue;
+                m_isRawKawPow = rawKawPow;
             }
-            LOG_INFO("%s " BRIGHT_BLACK_BG(MAGENTA_BOLD_S " Ignoring wrong value for algo-perf[%s] "), Tags::benchmark(), member.name.GetString());
+#           endif
+            algo_perf[algo.id()] = perf;
+            continue;
         }
     }
     m_isNewBenchRun = false;
@@ -106,6 +115,13 @@ void MoBenchmark::read(const rapidjson::Value &value)
             m_isNewBenchRun = true;
             return;
         }
+}
+
+const char *MoBenchmark::poolAlgoName(const Algorithm &algo) const {
+#   ifdef XMRIG_ALGO_KAWPOW
+    if (algo.id() == Algorithm::KAWPOW_RVN && m_isRawKawPow) return "kawpow1";
+#   endif
+    return algo.name();
 }
 
 double MoBenchmark::get_algo_perf(Algorithm::Id algo) const {
@@ -140,6 +156,9 @@ void MoBenchmark::start() {
         run_next_bench_algo();
         return;
     }
+#   ifdef XMRIG_ALGO_KAWPOW
+    if (algo.id() == Algorithm::KAWPOW_RVN) m_isRawKawPow = true;
+#   endif
     // calculate number of active miner backends in m_enabled_backend_count
     m_enabled_backend_count = 0;
     for (auto backend : m_controller->miner()->backends()) if (backend->isEnabled() && backend->isEnabled(algo)) ++ m_enabled_backend_count;
@@ -229,9 +248,6 @@ void MoBenchmark::onJobResult(const JobResult& result) {
             if (!(hashrate = t[1]))
                 if (!(hashrate = t[0]))
                     hashrate = static_cast<double>(m_hash_count) * result.diff / (now - m_bench_start) * 1000.0f;
-#       ifdef XMRIG_ALGO_KAWPOW
-        if (algo.id() == Algorithm::KAWPOW_RVN) hashrate /= ((double)0xFFFFFFFFFFFFFFFF) / 0xFF000000;
-#       endif
         algo_perf[algo.id()] = hashrate; // store hashrate result
         LOG_INFO("%s " BRIGHT_BLACK_BG(WHITE_BOLD_S " Algo " MAGENTA_BOLD_S "%s" WHITE_BOLD_S " hashrate: " CYAN_BOLD_S "%f "), Tags::benchmark(), algo.name(), hashrate);
         run_next_bench_algo();

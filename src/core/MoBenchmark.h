@@ -74,6 +74,7 @@ class MoBenchmark : public IJobResultListener {
 
         Controller *m_controller;          // to get access to config and network
         bool m_isNewBenchRun;              // true if benchmark is need to be executed or was executed
+        bool m_isRawKawPow;                // true when KawPow perf was measured in raw H/s
         uint64_t m_bench_algo;             // current perf algo number we benchmark (in bench_algos array)
         uint64_t m_hash_count;             // number of hashes calculated for current perf algo
         uint64_t m_time_start;             // time of the first resultt for current perf algo (in ms)
@@ -98,6 +99,7 @@ class MoBenchmark : public IJobResultListener {
         void flush_perf();
 
         bool isNewBenchRun() const { return m_isNewBenchRun; }
+        const char *poolAlgoName(const Algorithm &algo) const;
         mutable std::map<Algorithm::Id, double> algo_perf;
 
         rapidjson::Value toJSON(rapidjson::Document &doc) const;
