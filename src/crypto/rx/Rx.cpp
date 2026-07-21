@@ -134,7 +134,9 @@ bool xmrig::Rx::init(const T &seed, const RxConfig &config, const CpuConfig &cpu
 
     randomx_set_scratchpad_prefetch_mode(config.scratchpadPrefetchMode());
     randomx_set_huge_pages_jit(cpu.isHugePagesJit());
-    randomx_set_optimized_dataset_init(config.initDatasetAVX2());
+    // Panthera uses a smaller cache than the AVX2 initializer's fixed RandomX layout.
+    // Its portable JIT initializer is consensus-correct for the runtime configuration.
+    randomx_set_optimized_dataset_init(seed.algorithm() == Algorithm::RX_XLA ? 0 : config.initDatasetAVX2());
 
     if (!osInitialized) {
 #       ifdef XMRIG_FIX_RYZEN

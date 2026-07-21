@@ -290,6 +290,9 @@ public:
     {
         RxAlgo::apply(algorithm);
 
+        // Match the miner: Panthera's reduced cache requires the portable initializer.
+        randomx_set_optimized_dataset_init(algorithm == Algorithm::RX_XLA ? 0 : -1);
+
         cacheMemory.reset(new AlignedBuffer(RandomX_CurrentConfig.ArgonMemory * 1024));
         cache = randomx_create_cache(RANDOMX_FLAG_JIT, cacheMemory->data());
         if (cache == nullptr) {
@@ -451,6 +454,11 @@ static void verifyRandomXFull(TestState &state, const RxVector &item)
         if (item.id != Algorithm::RX_V2) {
             const auto fullJitA = full.hash(static_cast<randomx_flags>(RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT), inputA);
             state.expect((std::string(item.name) + " full jit").c_str(), fullJitA.data(), fullA.data(), fullJitA.size());
+
+            full.hashFirstNext(static_cast<randomx_flags>(RANDOMX_FLAG_FULL_MEM | RANDOMX_FLAG_JIT),
+                               inputA, inputB, nextA, nextB);
+            state.expect((std::string(item.name) + " full jit first/next A").c_str(), nextA.data(), fullA.data(), nextA.size());
+            state.expect((std::string(item.name) + " full jit first/next B").c_str(), nextB.data(), fullB.data(), nextB.size());
         }
 
         if (Cpu::info()->hasAES()) {
